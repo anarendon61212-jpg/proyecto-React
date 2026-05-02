@@ -36,7 +36,11 @@ function App() {
           <Route path="/auth/signup" element={<SignUp />} />
 
           <Route element={<ProtectedRoute />}>
-            <Route element={<DefaultLayout />}>
+            <Route element={
+              <Suspense fallback={<Loader />}>
+                <DefaultLayout />
+              </Suspense>
+            }>
               <Route index element={<ECommerce />} />
               {routes.map((routes, index) => {
                 const { path, component: Component } = routes;
