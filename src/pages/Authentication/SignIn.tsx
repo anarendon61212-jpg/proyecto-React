@@ -21,6 +21,11 @@ const SignIn: React.FC = () => {
       console.error('Error al iniciar sesión', error);
     }
   }
+
+  const handleGuestLogin = () => {
+    SecurityService.loginAsGuest();
+    navigate("/");
+  }
   return (
     <>
       <Breadcrumb pageName="Sign In" />
@@ -30,20 +35,14 @@ const SignIn: React.FC = () => {
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="px-26 py-17.5 text-center">
 
-                <img
-                  className="hidden dark:block"
-                  src={"/images/logo/logo.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
-                <img
-                  className="dark:hidden"
-                  src={"/images/logo/logo-dark.svg"}
-                  alt="Logo"
-                  width={176}
-                  height={32}
-                />
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                    Bienvenido
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 mt-2">
+                    Inicia sesión para continuar
+                  </p>
+                </div>
 
 
               <p className="2xl:px-20">
@@ -263,7 +262,12 @@ const SignIn: React.FC = () => {
               </Formik>
 
               <div className="mt-6 text-center">
-                
+                <button
+                  onClick={handleGuestLogin}
+                  className="w-full cursor-pointer rounded-lg border border-meta-3 bg-meta-3 p-4 text-white transition hover:bg-opacity-90"
+                >
+                  Iniciar como invitado
+                </button>
               </div>
             </div>
           </div>

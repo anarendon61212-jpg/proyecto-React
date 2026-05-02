@@ -81,6 +81,22 @@ class SecurityService extends EventTarget {
         store.dispatch(setUser(null));
     }
 
+    loginAsGuest() {
+        const guestUser = {
+            id: 0,
+            name: 'Invitado',
+            email: 'guest@example.com',
+            role: 'guest'
+        };
+
+        this.user = guestUser;
+        this.storage.setItem(this.userKey, JSON.stringify(guestUser));
+        this.storage.setItem(this.keyToken, 'guest-token');
+
+        store.dispatch(setUser(guestUser));
+        this.dispatchEvent(new CustomEvent("userChange", { detail: guestUser }));
+    }
+
     isAuthenticated() {
         return this.storage.getItem(this.keyToken) !== null;
     }

@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { io } from 'socket.io-client';
+// import { io } from 'socket.io-client';
 
-const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-const socket = io(SOCKET_URL);
+// const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
+// const socket = io(SOCKET_URL);
 
+// Socket.io desactivado para evitar errores de conexión cuando no hay servidor backend
+const socket: any = null;
 
 interface Notification {
   id: number;
@@ -19,27 +21,31 @@ const DropdownNotification = () => {
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
 
-  // WebSocket listener
+  // WebSocket listener (desactivado temporalmente)
   useEffect(() => {
-    socket.on('new_notification', (data: any) => {
-      const now = new Date();
-      console.log('Notificación recibida:', data);
+    if (socket) {
+      socket.on('new_notification', (data: any) => {
+        const now = new Date();
+        console.log('Notificación recibida:', data);
 
-      const newNotification: Notification = {
-        id: Date.now(),
-        message: data?.message || 'Nueva notificación',
-        time: now.toLocaleTimeString(), // hora
-      };
+        const newNotification: Notification = {
+          id: Date.now(),
+          message: data?.message || 'Nueva notificación',
+          time: now.toLocaleTimeString(), // hora
+        };
 
-      setNotifications((prev) => {
-        const updated = [newNotification, ...prev];
-        return updated.slice(0, 5); // máximo 5
+        setNotifications((prev) => {
+          const updated = [newNotification, ...prev];
+          return updated.slice(0, 5); // máximo 5
+        });
       });
-    });
 
-    return () => {
-      socket.off('new_notification');
-    };
+      return () => {
+        if (socket) {
+          socket.off('new_notification');
+        }
+      };
+    }
   }, []);
 
   // Click outside

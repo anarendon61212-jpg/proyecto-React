@@ -1,6 +1,4 @@
 import { Link } from 'react-router-dom';
-import LogoDark from '../../images/logo/logo-dark.svg';
-import Logo from '../../images/logo/logo.svg';
 
 const SignUp = () => {
   return (
@@ -9,10 +7,14 @@ const SignUp = () => {
         <div className="flex flex-wrap items-center">
           <div className="hidden w-full xl:block xl:w-1/2">
             <div className="py-17.5 px-26 text-center">
-              <Link className="mb-5.5 inline-block" to="/">
-                <img className="hidden dark:block" src={Logo} alt="Logo" />
-                <img className="dark:hidden" src={LogoDark} alt="Logo" />
-              </Link>
+              <div className="mb-5.5">
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                  Crear Cuenta
+                </h1>
+                <p className="text-gray-600 dark:text-gray-400 mt-2">
+                  Regístrate para comenzar
+                </p>
+              </div>
               <p className="2xl:px-20">
                 Lorem ipsum dolor sit amet, consectetur adipiscing elit
                 suspendisse.
