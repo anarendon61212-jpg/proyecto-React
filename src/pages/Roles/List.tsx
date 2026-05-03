@@ -12,7 +12,7 @@ const Roles: React.FC = () => {
         { id: 2, name: "User" },
     ]);
 
-    const handleAction = (action: string, item: Role) => {
+    const handleAction = (action: string, item: Record<string, any>) => {
         if (action === "assignPermissions") {
             console.log("Assign permissions to role:", item);
         }

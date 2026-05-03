@@ -3,8 +3,14 @@ import dataJSON from '../../public/data.json';
 
 
 
-export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
-  const fields=Object.keys(Object.values(dataJSON)[0]).filter((item:any)=>!(item.startsWith("delta_")));
+interface ModalProps {
+  closeModal: () => void;
+  onSubmit: (data: any) => void;
+  defaultValue?: any;
+}
+
+export const Modal = ({ closeModal, onSubmit, defaultValue }: ModalProps) => {
+  const fields = Object.keys(Object.values(dataJSON)[0]).filter((item: any) => !(item.startsWith("delta_")));
   
   const [formState, setFormState] = useState(
     defaultValue || {
@@ -32,7 +38,7 @@ export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
         }
         else{
         if (key=='id'){
-          if (!(Object.keys(dataJSON).includes(value)||value=="ALL")){
+          if (!(Object.keys(dataJSON).includes(value.toString()) || value === "ALL")) {
             errorFields.push("INVALID_ID_"+value)
           }
         }
@@ -44,20 +50,20 @@ export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
     }
   };
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     console.log(formState.criterion);
     console.log(e.target.name);
     console.log(e.target.name=="para"&&e.target.value=='rating');
     console.log(formState.criterion>1&&formState.criterion<4);
     console.log(e.target.value);
     console.log(e.target.name=="para"&&e.target.value=='rating'&&formState.criterion>1&&formState.criterion<4);
-    if (e.target.name=="para"&&e.target.value=='rating'&&formState.criterion>1&&formState.criterion<4) {setFormState({ ...formState, ["criterion"]: 0 });}
+    if (e.target.name === "para" && e.target.value === 'rating' && parseInt(formState.criterion) > 1 && parseInt(formState.criterion) < 4) {setFormState({ ...formState, ["criterion"]: "0" });}
     
     console.log(formState.criterion);
     setFormState({ ...formState, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     if (!validateForm()) return;
@@ -70,8 +76,8 @@ export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
   return (
     <div
       className="modal-container fixed z-50 flex top-25 bottom-5 "
-      onClick={(e) => {
-        if (e.target.className === "modal-container") closeModal();
+      onClick={(e: React.MouseEvent<HTMLDivElement>) => {
+        if ((e.target as HTMLElement).className === "modal-container") closeModal();
       }}
     >
     
@@ -82,7 +88,7 @@ export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
       onClick={closeModal}
       >&times;</strong>
       </div>
-        <form>
+        <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-3 gap-5 justify-normal">
           <div className="form-group w-full col-span-3">
             <label  className="mb-3 block text-sm font-medium text-black dark:text-white"
@@ -226,7 +232,7 @@ export const Modal = ({ closeModal, onSubmit, defaultValue }) => {
           
           <br></br>
           <button className="btn flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:shadow-1"
-                      type="submit" onClick={handleSubmit}>
+                      type="submit">
             Submit
           </button>
         </form>

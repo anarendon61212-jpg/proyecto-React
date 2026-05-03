@@ -3,27 +3,27 @@ import userThree from '../images/user/user-03.png';
 import fireToast from '../hooks/fireToast';
 import { Table } from "../components/TableSettings";
 import { Modal } from "../components/ModalSettings";
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 const Settings = () => {
   const [modalOpen, setModalOpen] = useState(false);
-  const [rows, setRows] = useState(localStorage.getItem("alertSettings")?JSON.parse(localStorage.getItem("alertSettings")):[]);
+  const [rows, setRows] = useState<any[]>(localStorage.getItem("alertSettings") ? JSON.parse(localStorage.getItem("alertSettings") || "[]") : []);
   useEffect(() => {
     // storing input name
     localStorage.setItem("alertSettings", JSON.stringify(rows));
   }, [rows]);
-  const [rowToEdit, setRowToEdit] = useState(null);
+  const [rowToEdit, setRowToEdit] = useState<number | null>(null);
 
-  const handleDeleteRow = (targetIndex) => {
+  const handleDeleteRow = (targetIndex: number) => {
     setRows(rows.filter((_, idx) => idx !== targetIndex));
   };
 
-  const handleEditRow = (idx) => {
+  const handleEditRow = (idx: number) => {
     setRowToEdit(idx);
 
     setModalOpen(true);
   };
 
-  const handleSubmit = (newRow) => {
+  const handleSubmit = (newRow: any) => {
     rowToEdit === null
       ? setRows([...rows, newRow])
       : setRows(
