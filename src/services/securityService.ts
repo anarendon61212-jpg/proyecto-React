@@ -19,7 +19,7 @@ class SecurityService extends EventTarget {
         this.storage = storage;
         this.keyToken = "token";
         this.userKey = "user";
-        this.API_URL = import.meta.env.VITE_API_URL_SECURITY || "";
+        this.API_URL = import.meta.env.VITE_API_URL_SECURITY || import.meta.env.VITE_API_URL || "http://localhost:5002/api";
         this.user = this.loadStoredUser();
     }
 
@@ -40,7 +40,6 @@ class SecurityService extends EventTarget {
     }
 
     async login(user: User) {
-        console.log("llamando api " + `${this.API_URL}/login`);
         const response = await axios.post(`${this.API_URL}/login`, user, {
             headers: {
                 "Content-Type": "application/json",
@@ -54,7 +53,6 @@ class SecurityService extends EventTarget {
 
         this.user = data.user;
 
-        // Ajusta esto según la estructura real de la respuesta
         this.storage.setItem(this.userKey, JSON.stringify(this.user));
 
         if (data?.token) {

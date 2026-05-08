@@ -5,7 +5,7 @@ import '../js/us-aea-en';
 
 const MapOne = () => {
   useEffect(() => {
-    const mapOne = new jsVectorMap({
+    new jsVectorMap({
       selector: '#mapOne',
       map: 'us_aea_en',
       zoomButtons: true,
@@ -38,7 +38,7 @@ const MapOne = () => {
         },
       },
     });
-  });
+  }, []);
 
   return (
     <div className="col-span-12 rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark xl:col-span-7">
