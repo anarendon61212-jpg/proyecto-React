@@ -1,0 +1,15 @@
+export { Nota } from './Nota';
+export { Inscripcion } from './Inscripcion';
+export { Estudiante } from './Estudiante';
+export { Matricula } from './Matricula';
+export { Carrera } from './Carrera';
+export { Semestre } from './Semestre';
+export { Grupo } from './Grupo';
+export { Docente } from './Docente';
+export { Asignatura } from './Asignatura';
+export { Evaluacion } from './Evaluacion';
+export { Rubrica } from './Rubrica';
+export { Criterio } from './Criterio';
+export { Escala } from './Escala';
+export { CalificacionDetalle } from './CalificacionDetalle';
+export { PlanEstudio } from './PlanEstudio';
