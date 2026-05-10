@@ -47,4 +47,58 @@ export class Inscripcion {
   isActive(): boolean {
     return this.estado === 'activo';
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getEstudianteId(): string {
+    return this.estudiante_id;
+  }
+
+  get getGrupoId(): string {
+    return this.grupo_id;
+  }
+
+  get getFechaInscripcion(): Date {
+    return this.fecha_inscripcion;
+  }
+
+  get getEstado(): string {
+    return this.estado;
+  }
+
+  get getEstudiante(): Estudiante | undefined {
+    return this.estudiante;
+  }
+
+  get getGrupo(): Grupo | undefined {
+    return this.grupo;
+  }
+
+  get getNotas(): Nota[] {
+    return this.notas || [];
+  }
+
+  // Setters
+  set setEstado(estado: 'activo' | 'cancelado') {
+    this.estado = estado;
+    this.updated_at = new Date();
+  }
+
+  set setEstudiante(estudiante: Estudiante) {
+    this.estudiante = estudiante;
+    this.updated_at = new Date();
+  }
+
+  set setGrupo(grupo: Grupo) {
+    this.grupo = grupo;
+    this.updated_at = new Date();
+  }
+
+  set setNotas(notas: Nota[]) {
+    this.notas = notas;
+    this.updated_at = new Date();
+  }
 }

@@ -47,4 +47,63 @@ export class Estudiante {
   getFullName(): string {
     return `${this.nombre} ${this.apellido}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getUserId(): string {
+    return this.user_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getApellido(): string {
+    return this.apellido;
+  }
+
+  get getCedula(): string {
+    return this.cedula;
+  }
+
+  get getInscripciones(): Inscripcion[] {
+    return this.inscripciones || [];
+  }
+
+  get getMatriculas(): Matricula[] {
+    return this.matriculas || [];
+  }
+
+  get getCalificacionesDetalle(): CalificacionDetalle[] {
+    return this.calificacionesDetalle || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setApellido(apellido: string) {
+    this.apellido = apellido;
+    this.updated_at = new Date();
+  }
+
+  set setInscripciones(inscripciones: Inscripcion[]) {
+    this.inscripciones = inscripciones;
+    this.updated_at = new Date();
+  }
+
+  set setMatriculas(matriculas: Matricula[]) {
+    this.matriculas = matriculas;
+    this.updated_at = new Date();
+  }
+
+  set setCalificacionesDetalle(calificacionesDetalle: CalificacionDetalle[]) {
+    this.calificacionesDetalle = calificacionesDetalle;
+    this.updated_at = new Date();
+  }
 }

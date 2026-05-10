@@ -51,4 +51,54 @@ export class Nota {
     const totalPuntaje = calificacionesDetalle.reduce((sum, detalle) => sum + detalle.puntaje, 0);
     return totalPuntaje / calificacionesDetalle.length;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getInscripcionId(): string {
+    return this.inscripcion_id;
+  }
+
+  get getRubricaId(): string {
+    return this.rubrica_id;
+  }
+
+  get getNotaFinal(): number {
+    return this.nota_final;
+  }
+
+  get getObservaciones(): string {
+    return this.observaciones;
+  }
+
+  get getInscripcion(): Inscripcion | undefined {
+    return this.inscripcion;
+  }
+
+  get getRubrica(): Rubrica | undefined {
+    return this.rubrica;
+  }
+
+  // Setters
+  set setNotaFinal(nota_final: number) {
+    this.nota_final = nota_final;
+    this.updated_at = new Date();
+  }
+
+  set setObservaciones(observaciones: string) {
+    this.observaciones = observaciones;
+    this.updated_at = new Date();
+  }
+
+  set setInscripcion(inscripcion: Inscripcion) {
+    this.inscripcion = inscripcion;
+    this.updated_at = new Date();
+  }
+
+  set setRubrica(rubrica: Rubrica) {
+    this.rubrica = rubrica;
+    this.updated_at = new Date();
+  }
 }

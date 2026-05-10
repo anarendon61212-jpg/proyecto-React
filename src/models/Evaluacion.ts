@@ -36,4 +36,45 @@ export class Evaluacion {
   private generateId(): string {
     return `evaluacion_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getAsignaturaId(): string {
+    return this.asignatura_id;
+  }
+
+  get getRubricaId(): string {
+    return this.rubrica_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getAsignatura(): Asignatura | undefined {
+    return this.asignatura;
+  }
+
+  get getRubrica(): Rubrica | undefined {
+    return this.rubrica;
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setAsignatura(asignatura: Asignatura) {
+    this.asignatura = asignatura;
+    this.updated_at = new Date();
+  }
+
+  set setRubrica(rubrica: Rubrica) {
+    this.rubrica = rubrica;
+    this.updated_at = new Date();
+  }
 }

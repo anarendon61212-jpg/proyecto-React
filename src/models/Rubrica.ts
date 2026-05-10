@@ -52,4 +52,66 @@ export class Rubrica {
   hasRequiredCriteria(): boolean {
     return this.criterios !== undefined && this.criterios.length > 0;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getTitulo(): string {
+    return this.titulo;
+  }
+
+  get getDescripcion(): string {
+    return this.descripcion;
+  }
+
+  get getEsPublica(): boolean {
+    return this.es_publica;
+  }
+
+  get getEvaluaciones(): Evaluacion[] {
+    return this.evaluaciones || [];
+  }
+
+  get getCriterios(): Criterio[] {
+    return this.criterios || [];
+  }
+
+  get getNotas(): Nota[] {
+    return this.notas || [];
+  }
+
+  // Setters
+  set setTitulo(titulo: string) {
+    this.titulo = titulo;
+    this.updated_at = new Date();
+  }
+
+  set setDescripcion(descripcion: string) {
+    this.descripcion = descripcion;
+    this.updated_at = new Date();
+  }
+
+  set setEsPublica(es_publica: boolean) {
+    if (this.isTotalWeightValid()) {
+      this.es_publica = es_publica;
+      this.updated_at = new Date();
+    }
+  }
+
+  set setEvaluaciones(evaluaciones: Evaluacion[]) {
+    this.evaluaciones = evaluaciones;
+    this.updated_at = new Date();
+  }
+
+  set setCriterios(criterios: Criterio[]) {
+    this.criterios = criterios;
+    this.updated_at = new Date();
+  }
+
+  set setNotas(notas: Nota[]) {
+    this.notas = notas;
+    this.updated_at = new Date();
+  }
 }

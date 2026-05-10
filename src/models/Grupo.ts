@@ -54,4 +54,74 @@ export class Grupo {
   hasRequiredFields(): boolean {
     return !!this.semestre_id && !!this.docente_id && !!this.asignatura_id;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getCodigoGrupo(): string {
+    return this.codigo_grupo;
+  }
+
+  get getSemestreId(): string {
+    return this.semestre_id;
+  }
+
+  get getDocenteId(): string {
+    return this.docente_id;
+  }
+
+  get getAsignaturaId(): string {
+    return this.asignatura_id;
+  }
+
+  get getSemestre(): Semestre | undefined {
+    return this.semestre;
+  }
+
+  get getDocente(): Docente | undefined {
+    return this.docente;
+  }
+
+  get getAsignatura(): Asignatura | undefined {
+    return this.asignatura;
+  }
+
+  get getInscripciones(): Inscripcion[] {
+    return this.inscripciones || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setDocente(docente: Docente) {
+    this.docente = docente;
+    this.docente_id = docente.id;
+    this.updated_at = new Date();
+  }
+
+  set setAsignatura(asignatura: Asignatura) {
+    this.asignatura = asignatura;
+    this.asignatura_id = asignatura.id;
+    this.updated_at = new Date();
+  }
+
+  set setSemestre(semestre: Semestre) {
+    this.semestre = semestre;
+    this.semestre_id = semestre.id;
+    this.updated_at = new Date();
+  }
+
+  set setInscripciones(inscripciones: Inscripcion[]) {
+    this.inscripciones = inscripciones;
+    this.updated_at = new Date();
+  }
 }

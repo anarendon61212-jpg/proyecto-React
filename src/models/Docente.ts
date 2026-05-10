@@ -45,4 +45,63 @@ export class Docente {
   getFullName(): string {
     return `${this.nombre} ${this.apellido}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getUserId(): string {
+    return this.user_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getApellido(): string {
+    return this.apellido;
+  }
+
+  get getCedula(): string {
+    return this.cedula;
+  }
+
+  get getTelefono(): string {
+    return this.telefono;
+  }
+
+  get getEspecialidad(): string {
+    return this.especialidad;
+  }
+
+  get getGrupos(): Grupo[] {
+    return this.grupos || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setApellido(apellido: string) {
+    this.apellido = apellido;
+    this.updated_at = new Date();
+  }
+
+  set setTelefono(telefono: string) {
+    this.telefono = telefono;
+    this.updated_at = new Date();
+  }
+
+  set setEspecialidad(especialidad: string) {
+    this.especialidad = especialidad;
+    this.updated_at = new Date();
+  }
+
+  set setGrupos(grupos: Grupo[]) {
+    this.grupos = grupos;
+    this.updated_at = new Date();
+  }
 }

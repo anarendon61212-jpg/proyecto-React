@@ -50,4 +50,74 @@ export class Asignatura {
   isCreditsValid(): boolean {
     return this.creditos > 0;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getCodigo(): string {
+    return this.codigo;
+  }
+
+  get getDescripcion(): string {
+    return this.descripcion;
+  }
+
+  get getCreditos(): number {
+    return this.creditos;
+  }
+
+  get getIsActive(): boolean {
+    return this.is_active;
+  }
+
+  get getGrupos(): Grupo[] {
+    return this.grupos || [];
+  }
+
+  get getPlanesEstudio(): PlanEstudio[] {
+    return this.planesEstudio || [];
+  }
+
+  get getEvaluaciones(): Evaluacion[] {
+    return this.evaluaciones || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setDescripcion(descripcion: string) {
+    this.descripcion = descripcion;
+    this.updated_at = new Date();
+  }
+
+  set setCreditos(creditos: number) {
+    if (this.isCreditsValid()) {
+      this.creditos = creditos;
+      this.updated_at = new Date();
+    }
+  }
+
+  set setIsActive(is_active: boolean) {
+    this.is_active = is_active;
+    this.updated_at = new Date();
+  }
+
+  set setGrupos(grupos: Grupo[]) {
+    this.grupos = grupos;
+    this.updated_at = new Date();
+  }
+
+  set setEvaluaciones(evaluaciones: Evaluacion[]) {
+    this.evaluaciones = evaluaciones;
+    this.updated_at = new Date();
+  }
 }

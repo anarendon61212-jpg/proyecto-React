@@ -39,4 +39,54 @@ export class CalificacionDetalle {
   private generateId(): string {
     return `calif_detalle_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getEscalaId(): string {
+    return this.escala_id;
+  }
+
+  get getEstudianteId(): string {
+    return this.estudiante_id;
+  }
+
+  get getPuntaje(): number {
+    return this.puntaje;
+  }
+
+  get getComentario(): string {
+    return this.comentario;
+  }
+
+  get getEscala(): Escala | undefined {
+    return this.escala;
+  }
+
+  get getEstudiante(): Estudiante | undefined {
+    return this.estudiante;
+  }
+
+  // Setters
+  set setPuntaje(puntaje: number) {
+    this.puntaje = puntaje;
+    this.updated_at = new Date();
+  }
+
+  set setComentario(comentario: string) {
+    this.comentario = comentario;
+    this.updated_at = new Date();
+  }
+
+  set setEscala(escala: Escala) {
+    this.escala = escala;
+    this.updated_at = new Date();
+  }
+
+  set setEstudiante(estudiante: Estudiante) {
+    this.estudiante = estudiante;
+    this.updated_at = new Date();
+  }
 }

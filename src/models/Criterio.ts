@@ -43,4 +43,61 @@ export class Criterio {
   isWeightValid(): boolean {
     return this.peso > 0 && this.peso <= 100;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getRubricaId(): string {
+    return this.rubrica_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getDescripcion(): string {
+    return this.descripcion;
+  }
+
+  get getPeso(): number {
+    return this.peso;
+  }
+
+  get getRubrica(): Rubrica | undefined {
+    return this.rubrica;
+  }
+
+  get getEscalas(): Escala[] {
+    return this.escalas || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setDescripcion(descripcion: string) {
+    this.descripcion = descripcion;
+    this.updated_at = new Date();
+  }
+
+  set setPeso(peso: number) {
+    if (this.isWeightValid()) {
+      this.peso = peso;
+      this.updated_at = new Date();
+    }
+  }
+
+  set setRubrica(rubrica: Rubrica) {
+    this.rubrica = rubrica;
+    this.updated_at = new Date();
+  }
+
+  set setEscalas(escalas: Escala[]) {
+    this.escalas = escalas;
+    this.updated_at = new Date();
+  }
 }

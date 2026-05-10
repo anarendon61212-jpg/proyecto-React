@@ -42,4 +42,63 @@ export class PlanEstudio {
   private generateId(): string {
     return `plan_estudio_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getCarreraId(): string {
+    return this.carrera_id;
+  }
+
+  get getAsignaturaId(): string {
+    return this.asignatura_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getAnio(): number {
+    return this.anio;
+  }
+
+  get getSemestreSugerido(): number {
+    return this.semestre_sugerido;
+  }
+
+  get getAsignatura(): Asignatura | undefined {
+    return this.asignatura;
+  }
+
+  get getCarrera(): Carrera | undefined {
+    return this.carrera;
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setAnio(anio: number) {
+    this.anio = anio;
+    this.updated_at = new Date();
+  }
+
+  set setSemestreSugerido(semestre_sugerido: number) {
+    this.semestre_sugerido = semestre_sugerido;
+    this.updated_at = new Date();
+  }
+
+  set setAsignatura(asignatura: Asignatura) {
+    this.asignatura = asignatura;
+    this.updated_at = new Date();
+  }
+
+  set setCarrera(carrera: Carrera) {
+    this.carrera = carrera;
+    this.updated_at = new Date();
+  }
 }

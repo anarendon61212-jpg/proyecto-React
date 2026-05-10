@@ -43,4 +43,54 @@ export class Matricula {
   isActive(): boolean {
     return this.estado_academico === 'activo';
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getEstudianteId(): string {
+    return this.estudiante_id;
+  }
+
+  get getCarreraId(): string {
+    return this.carrera_id;
+  }
+
+  get getPeriodoIngreso(): string {
+    return this.periodo_ingreso;
+  }
+
+  get getEstadoAcademico(): string {
+    return this.estado_academico;
+  }
+
+  get getEstudiante(): Estudiante | undefined {
+    return this.estudiante;
+  }
+
+  get getCarrera(): Carrera | undefined {
+    return this.carrera;
+  }
+
+  // Setters
+  set setPeriodoIngreso(periodo_ingreso: string) {
+    this.periodo_ingreso = periodo_ingreso;
+    this.updated_at = new Date();
+  }
+
+  set setEstadoAcademico(estado_academico: 'activo' | 'retirado' | 'suspendido') {
+    this.estado_academico = estado_academico;
+    this.updated_at = new Date();
+  }
+
+  set setEstudiante(estudiante: Estudiante) {
+    this.estudiante = estudiante;
+    this.updated_at = new Date();
+  }
+
+  set setCarrera(carrera: Carrera) {
+    this.carrera = carrera;
+    this.updated_at = new Date();
+  }
 }

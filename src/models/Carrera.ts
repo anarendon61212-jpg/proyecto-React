@@ -39,4 +39,59 @@ export class Carrera {
   private generateId(): string {
     return `carrera_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getCodigo(): string {
+    return this.codigo;
+  }
+
+  get getDescripcion(): string {
+    return this.descripcion;
+  }
+
+  get getIsActive(): boolean {
+    return this.is_active;
+  }
+
+  get getMatriculas(): Matricula[] {
+    return this.matriculas || [];
+  }
+
+  get getPlanesEstudio(): PlanEstudio[] {
+    return this.planesEstudio || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setDescripcion(descripcion: string) {
+    this.descripcion = descripcion;
+    this.updated_at = new Date();
+  }
+
+  set setIsActive(is_active: boolean) {
+    this.is_active = is_active;
+    this.updated_at = new Date();
+  }
+
+  set setMatriculas(matriculas: Matricula[]) {
+    this.matriculas = matriculas;
+    this.updated_at = new Date();
+  }
+
+  set setPlanesEstudio(planesEstudio: PlanEstudio[]) {
+    this.planesEstudio = planesEstudio;
+    this.updated_at = new Date();
+  }
 }

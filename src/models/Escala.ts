@@ -39,4 +39,59 @@ export class Escala {
   private generateId(): string {
     return `escala_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   }
+
+  // Getters
+  get getId(): string {
+    return this.id;
+  }
+
+  get getCriterioId(): string {
+    return this.criterio_id;
+  }
+
+  get getNombre(): string {
+    return this.nombre;
+  }
+
+  get getDescripcion(): string {
+    return this.descripcion;
+  }
+
+  get getValor(): number {
+    return this.valor;
+  }
+
+  get getCriterio(): Criterio | undefined {
+    return this.criterio;
+  }
+
+  get getCalificacionesDetalle(): CalificacionDetalle[] {
+    return this.calificacionesDetalle || [];
+  }
+
+  // Setters
+  set setNombre(nombre: string) {
+    this.nombre = nombre;
+    this.updated_at = new Date();
+  }
+
+  set setDescripcion(descripcion: string) {
+    this.descripcion = descripcion;
+    this.updated_at = new Date();
+  }
+
+  set setValor(valor: number) {
+    this.valor = valor;
+    this.updated_at = new Date();
+  }
+
+  set setCriterio(criterio: Criterio) {
+    this.criterio = criterio;
+    this.updated_at = new Date();
+  }
+
+  set setCalificacionesDetalle(calificacionesDetalle: CalificacionDetalle[]) {
+    this.calificacionesDetalle = calificacionesDetalle;
+    this.updated_at = new Date();
+  }
 }
