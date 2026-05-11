@@ -1,14 +1,13 @@
-import axios from "axios";
 import { User } from "../models/User";
 import { StorageProvider } from "../storage/StorageProvider";
 import { LocalStorageProvider } from "../storage/LocalStorageProvider";
 import { store } from "../store/store";
 import { setUser } from "../store/userSlice";
+import { api } from "../interceptors/authInterceptor";
 
 class SecurityService extends EventTarget {
     private readonly keyToken: string;
     private readonly userKey: string;
-    private readonly API_URL: string;
     private user: User | null;
     private theAuthProvider: any;
     private storage: StorageProvider;
@@ -19,7 +18,6 @@ class SecurityService extends EventTarget {
         this.storage = storage;
         this.keyToken = "token";
         this.userKey = "user";
-        this.API_URL = import.meta.env.VITE_API_URL_SECURITY || import.meta.env.VITE_API_URL || "http://localhost:5002/api";
         this.user = this.loadStoredUser();
     }
 
@@ -40,29 +38,35 @@ class SecurityService extends EventTarget {
     }
 
     async login(user: User) {
-        const response = await axios.post(`${this.API_URL}/login`, user, {
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-        if (response.status !== 200) {
-            throw new Error(`Login failed with status ${response.status}`);
+        console.log("📤 Enviando login request con datos:", JSON.stringify(user));
+        try {
+            const response = await api.post(`/auth/login`, user);
+            console.log("✅ Response del backend:", response.data);
+            if (response.status !== 200) {
+                throw new Error(`Login failed with status ${response.status}`);
+            }
+
+            // Backend retorna: { message: "...", data: { user: {...}, access_token: "..." } }
+            const data = response.data.data;
+
+            console.log("✅ Datos extraídos:", data);
+
+            this.user = data.user;
+
+            this.storage.setItem(this.userKey, JSON.stringify(this.user));
+
+            if (data?.access_token) {
+                this.storage.setItem(this.keyToken, data.access_token);
+            }
+
+            store.dispatch(setUser(this.user));
+            this.dispatchEvent(new CustomEvent("userChange", { detail: this.user }));
+
+            return this.user;
+        } catch (error: any) {
+            console.error("❌ Error en login:", error.response?.data || error.message);
+            throw error;
         }
-
-        const data = response.data;
-
-        this.user = data.user;
-
-        this.storage.setItem(this.userKey, JSON.stringify(this.user));
-
-        if (data?.token) {
-            this.storage.setItem(this.keyToken, data.token);
-        }
-
-        store.dispatch(setUser(this.user));
-        this.dispatchEvent(new CustomEvent("userChange", { detail: this.user }));
-
-        return this.user;
     }
 
     getUser() {

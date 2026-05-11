@@ -8,7 +8,7 @@ export class AuthInterceptor {
     private api: AxiosInstance;
     private storage: StorageProvider;
 
-    private EXCLUDED_ROUTES = ["/login", "/register"];
+    private EXCLUDED_ROUTES = ["/auth/login", "/auth/register"];
 
     constructor() {
         this.storage = new LocalStorageProvider();
