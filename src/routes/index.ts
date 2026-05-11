@@ -25,6 +25,7 @@ const SemesterUpdate = lazy(() => import('../pages/Academic/Semesters/Update'));
 const StudyPlanList = lazy(() => import('../pages/Academic/StudyPlans/StudyPlanList'));
 const SubjectList = lazy(() => import('../pages/Academic/Subjects/SubjectList'));
 const SubjectForm = lazy(() => import('../pages/Academic/Subjects/SubjectForm'));
+const AssignDocente = lazy(() => import('../pages/Academic/Groups/AssignDocente'));
 
 const coreRoutes = [
   {
@@ -96,6 +97,11 @@ const coreRoutes = [
     path: '/academic/subjects/edit/:id',
     title: 'Editar Asignatura',
     component: SubjectForm,
+  },
+  {
+    path: '/academic/groups/assign-docente',
+    title: 'Asignar Docente a Grupo',
+    component: AssignDocente,
   },
   {
     path: '/roles-list',
