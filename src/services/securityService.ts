@@ -37,10 +37,10 @@ class SecurityService extends EventTarget {
     }
 
     async login(user: User) {
-        console.log("📤 Enviando login request con datos:", JSON.stringify(user));
+        console.log(" Enviando login request con datos:", JSON.stringify(user));
         try {
             const response = await api.post(`/auth/login`, user);
-            console.log("✅ Response del backend:", response.data);
+            console.log(" Response del backend:", response.data);
             if (response.status !== 200) {
                 throw new Error(`Login failed with status ${response.status}`);
             }
@@ -48,7 +48,7 @@ class SecurityService extends EventTarget {
             // Backend retorna: { message: "...", data: { user: {...}, access_token: "..." } }
             const data = response.data.data;
 
-            console.log("✅ Datos extraídos:", data);
+            console.log(" Datos extraídos:", data);
 
             this.user = data.user;
 
@@ -63,7 +63,7 @@ class SecurityService extends EventTarget {
 
             return this.user;
         } catch (error: any) {
-            console.error("❌ Error en login:", error.response?.data || error.message);
+            console.error(" Error en login:", error.response?.data || error.message);
             throw error;
         }
     }
