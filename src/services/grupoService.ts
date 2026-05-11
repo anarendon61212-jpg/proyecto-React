@@ -3,8 +3,8 @@ import { api } from "../interceptors/authInterceptor";
 const API_URL = "/groups";
 
 class GrupoService {
-  async asignarDocente(grupoId: string, docenteId: string) {
-    return api.patch(`${API_URL}/${grupoId}/assign-teacher/${docenteId}`);
+  asignarDocente(grupoId: string, docenteId: string) {
+    return api.patch(`/groups/${grupoId}/assign-teacher/${docenteId}`);
   }
 
   async getGrupos() {
