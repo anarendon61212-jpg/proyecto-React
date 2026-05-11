@@ -209,6 +209,40 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   <svg
                     className="fill-current"
                     width="18"
+
+                <li>
+                  <div className="mb-2 px-4 text-sm font-semibold text-bodydark2">
+                    ADMINISTRACIÓN
+                  </div>
+                  <ul className="flex flex-col gap-1.5">
+                    <li>
+                      <NavLink
+                        to="/academic/careers/list"
+                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                          pathname.includes('/academic/careers') && 'bg-graydark dark:bg-meta-4'
+                        }`}
+                      >
+                        <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M9 1.5C5.686 1.5 3 4.186 3 7.5C3 10.814 5.686 13.5 9 13.5C12.314 13.5 15 10.814 15 7.5C15 4.186 12.314 1.5 9 1.5ZM9 12C6.519 12 4.5 9.981 4.5 7.5C4.5 5.019 6.519 3 9 3C11.481 3 13.5 5.019 13.5 7.5C13.5 9.981 11.481 12 9 12Z" fill="" />
+                        </svg>
+                        Carreras
+                      </NavLink>
+                    </li>
+                    <li>
+                      <NavLink
+                        to="/academic/semesters/list"
+                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                          pathname.includes('/academic/semesters') && 'bg-graydark dark:bg-meta-4'
+                        }`}
+                      >
+                        <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M2.25 3.75C2.25 2.92157 2.92157 2.25 3.75 2.25H14.25C15.0784 2.25 15.75 2.92157 15.75 3.75V14.25C15.75 15.0784 15.0784 15.75 14.25 15.75H3.75C2.92157 15.75 2.25 15.0784 2.25 14.25V3.75ZM3.75 3.75V14.25H14.25V3.75H3.75Z" fill="" />
+                        </svg>
+                        Semestres
+                      </NavLink>
+                    </li>
+                  </ul>
+                </li>
                     height="18"
                     viewBox="0 0 18 18"
                     fill="none"
@@ -443,6 +477,45 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                 </NavLink>
               </li>
               {/* <!-- Menu Item Settings --> */}
+            </ul>
+          </div>
+
+          {/* <!-- Administration Group --> */}
+          <div>
+            <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+              ADMINISTRACIÓN
+            </h3>
+
+            <ul className="mb-6 flex flex-col gap-1.5">
+              {/* <!-- Menu Item Users --> */}
+              <li>
+                <NavLink
+                  to="/users/list"
+                  className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                    pathname.includes('users') && 'bg-graydark dark:bg-meta-4'
+                  }`}
+                >
+                  <svg
+                    className="fill-current"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 18 18"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M9.0002 7.79065C11.0814 7.79065 12.7689 6.1594 12.7689 4.1344C12.7689 2.1094 11.0814 0.478149 9.0002 0.478149C6.91895 0.478149 5.23145 2.1094 5.23145 4.1344C5.23145 6.1594 6.91895 7.79065 9.0002 7.79065ZM9.0002 1.7719C10.3783 1.7719 11.5033 2.84065 11.5033 4.16252C11.5033 5.4844 10.3783 6.55315 9.0002 6.55315C7.62207 6.55315 6.49707 5.4844 6.49707 4.16252C6.49707 2.84065 7.62207 1.7719 9.0002 1.7719Z"
+                      fill=""
+                    />
+                    <path
+                      d="M10.8283 9.05627H7.17207C4.16269 9.05627 1.71582 11.5313 1.71582 14.5406V16.875C1.71582 17.2125 1.99707 17.5219 2.3627 17.5219C2.72832 17.5219 3.00957 17.2407 3.00957 16.875V14.5406C3.00957 12.2344 4.89394 10.3219 7.22832 10.3219H10.8564C13.1627 10.3219 15.0752 12.2063 15.0752 14.5406V16.875C15.0752 17.2125 15.3564 17.5219 15.7221 17.5219C16.0877 17.5219 16.3689 17.2407 16.3689 16.875V14.5406C16.2846 11.5313 13.8377 9.05627 10.8283 9.05627Z"
+                      fill=""
+                    />
+                  </svg>
+                  Usuarios
+                </NavLink>
+              </li>
+              {/* <!-- Menu Item Users --> */}
             </ul>
           </div>
 

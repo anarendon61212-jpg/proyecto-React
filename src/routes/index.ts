@@ -16,6 +16,12 @@ const UserCreate= lazy(() => import('../pages/Users/Create'));
 const UserUpdate= lazy(() => import('../pages/Users/Update'));
 const RoleList= lazy(() => import('../pages/Roles/List'));
 const Posts= lazy(() => import('../pages/Posts/List'));
+const CareerList = lazy(() => import('../pages/Academic/Careers/CareerList'));
+const CareerCreate = lazy(() => import('../pages/Academic/Careers/Create'));
+const CareerUpdate = lazy(() => import('../pages/Academic/Careers/Update'));
+const SemesterList = lazy(() => import('../pages/Academic/Semesters/SemesterList'));
+const SemesterCreate = lazy(() => import('../pages/Academic/Semesters/Create'));
+const SemesterUpdate = lazy(() => import('../pages/Academic/Semesters/Update'));
 
 const coreRoutes = [
   {
@@ -37,6 +43,36 @@ const coreRoutes = [
     path: '/posts/list',
     title: 'Posts',
     component: Posts,
+  },
+  {
+    path: '/academic/careers/list',
+    title: 'Carreras',
+    component: CareerList,
+  },
+  {
+    path: '/academic/careers/create',
+    title: 'Crear Carrera',
+    component: CareerCreate,
+  },
+  {
+    path: '/academic/careers/update/:id',
+    title: 'Editar Carrera',
+    component: CareerUpdate,
+  },
+  {
+    path: '/academic/semesters/list',
+    title: 'Semestres',
+    component: SemesterList,
+  },
+  {
+    path: '/academic/semesters/create',
+    title: 'Crear Semestre',
+    component: SemesterCreate,
+  },
+  {
+    path: '/academic/semesters/update/:id',
+    title: 'Editar Semestre',
+    component: SemesterUpdate,
   },
   {
     path: '/roles-list',

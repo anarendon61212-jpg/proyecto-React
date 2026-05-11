@@ -1,26 +1,21 @@
-import React, { useState } from 'react'; // Asegúrate de importar useState
+import React from 'react';
 import { User } from '../../models/User';
 import UserFormValidator from '../../components/users/UserFormValidator';
-
 import Swal from 'sweetalert2';
 import { userService } from "../../services/userService";
 import Breadcrumb from '../../components/Breadcrumb';
 import { useNavigate } from "react-router-dom";
 
-const App = () => {
+const CreateUserPage = () => {
     const navigate = useNavigate();
 
-    // Estado para almacenar el usuario a editar
-
-    // Lógica de creación
     const handleCreateUser = async (user: User) => {
-
         try {
             const createdUser = await userService.createUser(user);
             if (createdUser) {
                 Swal.fire({
                     title: "Completado",
-                    text: "Se ha creado correctamente el registro",
+                    text: "Se ha creado correctamente el usuario",
                     icon: "success",
                     timer: 3000
                 })
@@ -29,25 +24,34 @@ const App = () => {
             } else {
                 Swal.fire({
                     title: "Error",
-                    text: "Existe un problema al momento de crear el registro",
+                    text: "Existe un problema al crear el usuario",
                     icon: "error",
                     timer: 3000
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
+            const errorMessage = error.response?.data?.message || "Error al crear el usuario";
             Swal.fire({
                 title: "Error",
-                text: "Existe un problema al momento de crear el registro",
+                text: errorMessage,
                 icon: "error",
                 timer: 3000
             })
         }
     };
+
     return (
         <div>
-            {/* Formulario para crear un nuevo usuario */}
             <Breadcrumb pageName="Crear Usuario" />
             <UserFormValidator
+                handleAction={handleCreateUser}
+                mode={1}
+            />
+        </div>
+    );
+};
+
+export default CreateUserPage;
                 handleAction={handleCreateUser}
                 mode={1} // 1 significa creación
             />

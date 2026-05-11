@@ -1,0 +1,38 @@
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import Swal from "sweetalert2";
+import Breadcrumb from "../../../components/Breadcrumb";
+import CareerForm from "./CareerForm";
+import { careerService } from "../../../services/careerService";
+import { CareerFormValues } from "../../../models/Career";
+
+const CareerCreate: React.FC = () => {
+    const navigate = useNavigate();
+
+    const handleCreate = async (values: CareerFormValues) => {
+        try {
+            const created = await careerService.createCareer(values);
+            if (created) {
+                await Swal.fire({
+                    title: "Completado",
+                    text: "Carrera creada correctamente",
+                    icon: "success",
+                    timer: 2500,
+                });
+                navigate("/academic/careers/list");
+            }
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Error al crear la carrera");
+        }
+    };
+
+    return (
+        <div>
+            <Breadcrumb pageName="Crear Carrera" />
+            <CareerForm onSubmit={handleCreate} submitLabel="Guardar carrera" />
+        </div>
+    );
+};
+
+export default CareerCreate;

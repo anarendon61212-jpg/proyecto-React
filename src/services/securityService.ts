@@ -9,7 +9,6 @@ class SecurityService extends EventTarget {
     private readonly keyToken: string;
     private readonly userKey: string;
     private user: User | null;
-    private theAuthProvider: any;
     private storage: StorageProvider;
 
     constructor(storage: StorageProvider = new LocalStorageProvider()) {
@@ -84,11 +83,17 @@ class SecurityService extends EventTarget {
     }
 
     loginAsGuest() {
-        const guestUser = {
-            id: 0,
-            name: 'Invitado',
+        const guestUser: User = {
+            id: "0",
             email: 'guest@example.com',
-            role: 'guest'
+            code: 'GUEST',
+            role: 'STUDENT',
+            is_active: true,
+            profile: {
+                first_name: 'Invitado',
+                last_name: 'Sistema',
+                identification: '0',
+            }
         };
 
         this.user = guestUser;

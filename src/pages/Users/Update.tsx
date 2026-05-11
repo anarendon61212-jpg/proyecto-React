@@ -17,7 +17,7 @@ const UpdateUserPage = () => {
         const fetchUser = async () => {
             if (!id) return;
 
-            const userData = await userService.getUserById(parseInt(id));
+            const userData = await userService.getUserById(id);
             setUser(userData);
         };
 
@@ -26,7 +26,7 @@ const UpdateUserPage = () => {
 
     const handleUpdateUser = async (theUser: User) => {
         try {
-            const updatedUser = await userService.updateUser(user?.id || 0, {
+            const updatedUser = await userService.updateUser(user?.id || "", {
                 ...user,
                 ...theUser,
             });

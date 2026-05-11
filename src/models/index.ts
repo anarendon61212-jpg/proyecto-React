@@ -13,3 +13,5 @@ export { Criterio } from './Criterio';
 export { Escala } from './Escala';
 export { CalificacionDetalle } from './CalificacionDetalle';
 export { PlanEstudio } from './PlanEstudio';
+export type { Career, CareerFormValues } from './Career';
+export type { Semester, SemesterFormValues } from './Semester';
