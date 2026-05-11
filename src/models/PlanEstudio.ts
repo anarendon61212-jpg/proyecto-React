@@ -8,6 +8,9 @@ export class PlanEstudio {
   nombre: string;
   anio: number;
   semestre_sugerido: number;
+  creditos: number;
+  version: number;
+  activo: boolean;
   created_at: Date;
   updated_at: Date;
 
@@ -21,6 +24,9 @@ export class PlanEstudio {
     nombre: string,
     anio: number,
     semestre_sugerido: number,
+    creditos: number,
+    version: number = 1,
+    activo: boolean = true,
     id?: string,
     created_at?: Date,
     updated_at?: Date,
@@ -33,6 +39,9 @@ export class PlanEstudio {
     this.nombre = nombre;
     this.anio = anio;
     this.semestre_sugerido = semestre_sugerido;
+    this.creditos = creditos;
+    this.version = version;
+    this.activo = activo;
     this.created_at = created_at || new Date();
     this.updated_at = updated_at || new Date();
     this.asignatura = asignatura;

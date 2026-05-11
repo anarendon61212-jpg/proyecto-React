@@ -45,17 +45,32 @@ class SecurityService extends EventTarget {
                 throw new Error(`Login failed with status ${response.status}`);
             }
 
-            // Backend retorna: { message: "...", data: { user: {...}, access_token: "..." } }
-            const data = response.data.data;
+            // Backend retorna estructura que puede variar, extraer usuario y token correctamente
+            let userData, token;
+            
+            if (response.data.data) {
+                // Estructura: { data: { user: {...}, access_token: "..." } }
+                userData = response.data.data.user;
+                token = response.data.data.access_token;
+            } else if (response.data.user) {
+                // Estructura: { user: {...}, access_token: "..." }
+                userData = response.data.user;
+                token = response.data.access_token;
+            } else {
+                // Estructura directa: { user: {...}, access_token: "..." }
+                userData = response.data;
+                token = response.data.access_token;
+            }
 
-            console.log(" Datos extraídos:", data);
+            console.log(" Usuario extraído:", userData);
+            console.log(" Token extraído:", token);
 
-            this.user = data.user;
+            this.user = userData;
 
             this.storage.setItem(this.userKey, JSON.stringify(this.user));
 
-            if (data?.access_token) {
-                this.storage.setItem(this.keyToken, data.access_token);
+            if (token) {
+                this.storage.setItem(this.keyToken, token);
             }
 
             store.dispatch(setUser(this.user));

@@ -256,7 +256,36 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                         Semestres
                       </NavLink>
                     </li>
+                    <li>
+                      <NavLink
+                        to="/academic/study-plans"
+                        className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                          pathname.includes('/academic/study-plans') && 'bg-graydark dark:bg-meta-4'
+                        }`}
+                      >
+                        <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3.75 2.25h10.5c1.24264 0 2.25 1.00736 2.25 2.25v10.5c0 1.24264-1.00736 2.25-2.25 2.25H3.75c-1.24264 0-2.25-1.00736-2.25-2.25V4.5c0-1.24264 1.00736-2.25 2.25-2.25zm0 1.5h10.5c.41421 0 .75.33579.75.75v10.5c0 .41421-.33579.75-.75.75H3.75c-.41421 0-.75-.33579-.75-.75V4.5c0-.41421.33579-.75.75-.75z" fill="" />
+                          <path d="M9 6.75v4.5m-2.25-2.25h4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                        </svg>
+                        Planes de Estudio
+                      </NavLink>
+                    </li>
                   </ul>
+                </li>
+
+                <li>
+                  <NavLink
+                    to="/academic/subjects"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/academic/subjects') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3.75 2.25h10.5c1.24264 0 2.25 1.00736 2.25 2.25v10.5c0 1.24264-1.00736 2.25-2.25 2.25H3.75c-1.24264 0-2.25-1.00736-2.25-2.25V4.5c0-1.24264 1.00736-2.25 2.25-2.25zm0 1.5h10.5c.41421 0 .75.33579.75.75v10.5c0 .41421-.33579.75-.75.75H3.75c-.41421 0-.75-.33579-.75-.75V4.5c0-.41421.33579-.75.75-.75z" fill="" />
+                      <path d="M6.75 6.75h4.5v1.5h-4.5V6.75zm0 3h4.5v1.5h-4.5V9.75z" fill="" />
+                    </svg>
+                    Asignaturas
+                  </NavLink>
                 </li>
 
               {/* <!-- Menu Item Profile --> */}

@@ -7,7 +7,7 @@ import { RootState } from '../store/store';
 const DefaultLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useSelector((state: RootState) => state.user.user);
-  const isGuest = user?.id === 0 && user?.name === 'Invitado';
+  const isGuest = user?.id === "0" && user?.profile?.first_name === 'Invitado';
 
   return (
     <div className="dark:bg-boxdark-2 dark:text-bodydark">

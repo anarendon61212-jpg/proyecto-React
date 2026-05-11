@@ -22,6 +22,9 @@ const CareerUpdate = lazy(() => import('../pages/Academic/Careers/Update'));
 const SemesterList = lazy(() => import('../pages/Academic/Semesters/SemesterList'));
 const SemesterCreate = lazy(() => import('../pages/Academic/Semesters/Create'));
 const SemesterUpdate = lazy(() => import('../pages/Academic/Semesters/Update'));
+const StudyPlanList = lazy(() => import('../pages/Academic/StudyPlans/StudyPlanList'));
+const SubjectList = lazy(() => import('../pages/Academic/Subjects/SubjectList'));
+const SubjectForm = lazy(() => import('../pages/Academic/Subjects/SubjectForm'));
 
 const coreRoutes = [
   {
@@ -73,6 +76,26 @@ const coreRoutes = [
     path: '/academic/semesters/update/:id',
     title: 'Editar Semestre',
     component: SemesterUpdate,
+  },
+  {
+    path: '/academic/study-plans',
+    title: 'Planes de Estudio',
+    component: StudyPlanList,
+  },
+  {
+    path: '/academic/subjects',
+    title: 'Asignaturas',
+    component: SubjectList,
+  },
+  {
+    path: '/academic/subjects/create',
+    title: 'Nueva Asignatura',
+    component: SubjectForm,
+  },
+  {
+    path: '/academic/subjects/edit/:id',
+    title: 'Editar Asignatura',
+    component: SubjectForm,
   },
   {
     path: '/roles-list',

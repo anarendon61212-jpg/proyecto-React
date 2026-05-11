@@ -11,7 +11,7 @@ const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const user = useSelector((state: RootState) => state.user.user);
   const navigate = useNavigate();
-  const isGuest = user?.id === 0 && user?.name === 'Invitado';
+  const isGuest = user?.id === "0" && user?.profile?.first_name === 'Invitado';
   
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
@@ -62,7 +62,7 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-medium text-black dark:text-white">
-            {user?.name || 'Guest'}
+            {user?.role === 'ADMIN' ? 'Administrador' : user?.profile?.first_name || 'Guest'}
           </span>
           <span className="block text-xs">UX Designer</span>
         </span>
@@ -124,6 +124,27 @@ const DropdownUser = () => {
                   />
                 </svg>
                 Iniciar sesión
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => navigate('/auth/signup')}
+                className="flex items-center gap-3.5 text-sm font-medium duration-300 ease-in-out hover:text-primary lg:text-base"
+              >
+                <svg
+                  className="fill-current"
+                  width="22"
+                  height="22"
+                  viewBox="0 0 22 22"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M11 4.5C11.5523 4.5 12 4.05228 12 3.5C12 2.94772 11.5523 2.5 11 2.5C10.4477 2.5 10 2.94772 10 3.5C10 4.05228 10.4477 4.5 11 4.5ZM11 6.5C9.34315 6.5 8 5.15685 8 3.5C8 1.84315 9.34315 0.5 11 0.5C12.6569 0.5 14 1.84315 14 3.5C14 5.15685 12.6569 6.5 11 6.5ZM11 8.5C6.58172 8.5 3 12.0817 3 16.5C3 20.9183 6.58172 24.5 11 24.5C15.4183 24.5 19 20.9183 19 16.5C19 12.0817 15.4183 8.5 11 8.5ZM11 22.5C7.96243 22.5 5.5 20.0376 5.5 17C5.5 13.9624 7.96243 11.5 11 11.5C14.0376 11.5 16.5 13.9624 16.5 17C16.5 20.0376 14.0376 22.5 11 22.5Z"
+                    fill=""
+                  />
+                </svg>
+                Registrarse
               </button>
             </li>
           </ul>
