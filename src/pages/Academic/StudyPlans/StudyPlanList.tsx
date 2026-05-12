@@ -67,10 +67,17 @@ const StudyPlanList: React.FC = () => {
         let filtered = studyPlans;
         
         if (selectedVersion) {
-            filtered = filtered.filter(plan => plan.version.toString() === selectedVersion);
+            filtered = filtered.filter(plan => {
+                const version = (plan as any).version || (plan as any).year;
+                return version.toString() === selectedVersion;
+            });
         }
         
-        return filtered.sort((a, b) => b.version - a.version);
+        return filtered.sort((a, b) => {
+            const versionA = (a as any).version || (a as any).year;
+            const versionB = (b as any).version || (b as any).year;
+            return versionB - versionA;
+        });
     }, [studyPlans, selectedVersion]);
 
     const handleAddSubject = async () => {
@@ -180,7 +187,10 @@ const StudyPlanList: React.FC = () => {
     };
 
     const getVersionOptions = useMemo(() => {
-        const versions = new Set(studyPlans.map(plan => plan.version));
+        const versions = new Set(studyPlans.map(plan => {
+            const version = (plan as any).version || (plan as any).year || 1;
+            return version;
+        }));
         return Array.from(versions).sort((a, b) => b - a);
     }, [studyPlans]);
 
@@ -258,7 +268,7 @@ const StudyPlanList: React.FC = () => {
                             >
                                 <option value="">Todas las versiones</option>
                                 {getVersionOptions.map((version) => (
-                                    <option key={version} value={version.toString()}>
+                                    <option key={version} value={version?.toString() || '1'}>
                                         Versión {version}
                                     </option>
                                 ))}
@@ -349,7 +359,7 @@ const StudyPlanList: React.FC = () => {
                                                     </div>
                                                     {plan.asignatura && 'code' in plan.asignatura && (
                                                         <div className="text-sm text-gray-500">
-                                                            Código: {plan.asignatura.codigo}
+                                                            Código: {(plan.asignatura as any).code || (plan.asignatura as any).codigo}
                                                         </div>
                                                     )}
                                                 </div>
@@ -366,20 +376,20 @@ const StudyPlanList: React.FC = () => {
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                                    plan.activo 
+                                                    (plan as any).is_published 
                                                         ? 'bg-success/10 text-success' 
                                                         : 'bg-warning/10 text-warning'
                                                 }`}>
-                                                    v{plan.version}
+                                                    v{(plan as any).version || (plan as any).year}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                                    plan.activo 
+                                                    (plan as any).is_published 
                                                         ? 'bg-success/10 text-success' 
                                                         : 'bg-warning/10 text-warning'
                                                 }`}>
-                                                    {plan.activo ? 'Activo' : 'Inactivo'}
+                                                    {(plan as any).is_published ? 'Activo' : 'Inactivo'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

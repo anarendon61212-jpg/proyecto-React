@@ -1,7 +1,7 @@
 import { api } from "../interceptors/authInterceptor";
 import { PlanEstudio } from "../models/PlanEstudio";
 
-const API_URL = "/study-plans";
+const API_URL = "/academic/study-plans";
 
 interface ApiResponse<T> {
     message?: string;

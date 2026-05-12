@@ -105,12 +105,11 @@ const SubjectForm: React.FC = () => {
         setError(null);
 
         try {
-            const subjectData: any = {
+            const subjectData = {
+                ...formData,
                 nombre: formData.nombre.trim(),
                 codigo: formData.codigo.toUpperCase().trim(),
                 descripcion: formData.descripcion.trim(),
-                creditos: formData.creditos,
-                is_active: formData.is_active,
             };
 
             if (isEditing && id) {

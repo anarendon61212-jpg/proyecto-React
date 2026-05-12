@@ -1,6 +1,6 @@
 import { api } from "../interceptors/authInterceptor";
 
-const API_URL = "/teachers";
+const API_URL = "/academic/teachers";
 
 class DocenteService {
   async getDocentes() {

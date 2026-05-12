@@ -288,6 +288,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
 
+                <li>
+                  <NavLink
+                    to="/academic/groups/assign-docente"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/academic/groups/assign-docente') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 7.5C10.6569 7.5 12 6.15685 12 4.5C12 2.84315 10.6569 1.5 9 1.5C7.34315 1.5 6 2.84315 6 4.5C6 6.15685 7.34315 7.5 9 7.5Z" fill="" />
+                      <path d="M9 9C5.68629 9 3 11.6863 3 15V16.5H15V15C15 11.6863 12.3137 9 9 9Z" fill="" />
+                      <path d="M14.25 4.5H16.5V6.75H14.25V4.5Z" fill="" />
+                      <path d="M15.375 6.75L13.125 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    Asignar Docente
+                  </NavLink>
+                </li>
+
               {/* <!-- Menu Item Profile --> */}
               <li>
                 <NavLink

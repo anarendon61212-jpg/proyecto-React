@@ -1,7 +1,7 @@
 import { api } from "../interceptors/authInterceptor";
 import { Semester, SemesterFormValues } from "../models/Semester";
 
-const API_URL = "/semesters";
+const API_URL = "/academic/semesters";
 
 type ApiResponse<T> = {
     data?: T;

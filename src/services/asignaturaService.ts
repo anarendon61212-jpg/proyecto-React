@@ -1,7 +1,7 @@
 import { api } from "../interceptors/authInterceptor";
 import { Asignatura } from "../models/Asignatura";
 
-const API_URL = "/subjects";
+const API_URL = "/academic/subjects";
 
 interface ApiResponse<T> {
     message?: string;
