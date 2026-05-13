@@ -305,6 +305,23 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
 
+                <li>
+                  <NavLink
+                    to="/academic/matriculas/create"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/academic/matriculas') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 1.5C7.34315 1.5 6 2.84315 6 4.5C6 6.15685 7.34315 7.5 9 7.5C10.6569 7.5 12 6.15685 12 4.5C12 2.84315 10.6569 1.5 9 1.5Z" fill="" />
+                      <path d="M9 9C5.68629 9 3 11.6863 3 15V16.5H10.5V15C10.5 11.6863 12.3137 9 9 9Z" fill="" />
+                      <path d="M12 12.75H16.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      <path d="M14.25 10.5V15" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                    </svg>
+                    Matricular Estudiante
+                  </NavLink>
+                </li>
+
               {/* <!-- Menu Item Profile --> */}
               <li>
                 <NavLink

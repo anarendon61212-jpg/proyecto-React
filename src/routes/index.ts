@@ -54,6 +54,8 @@ const SubjectForm = lazy(() => import('../pages/Academic/Subjects/SubjectForm'))
 
 const AssignDocente = lazy(() => import('../pages/Academic/Groups/AssignDocente'));
 
+const MatriculaForm = lazy(() => import('../pages/Academic/Matriculas/MatriculaForm'));
+
 
 const coreRoutes = [
 
@@ -204,6 +206,16 @@ const coreRoutes = [
     title: 'Asignar Docente a Grupo',
 
     component: AssignDocente,
+
+  },
+
+  {
+
+    path: '/academic/matriculas/create',
+
+    title: 'Matricular Estudiante en Carrera',
+
+    component: MatriculaForm,
 
   },
 

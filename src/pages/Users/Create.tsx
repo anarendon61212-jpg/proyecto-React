@@ -52,12 +52,4 @@ const CreateUserPage = () => {
 };
 
 export default CreateUserPage;
-                handleAction={handleCreateUser}
-                mode={1} // 1 significa creación
-            />
-        </div>
-    );
-};
-
-export default App;
 
