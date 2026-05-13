@@ -19,6 +19,21 @@ const StudyPlanList: React.FC = () => {
     const [selectedCareer, setSelectedCareer] = useState<string>("");
     const [selectedVersion, setSelectedVersion] = useState<string>("");
     const [showVersions, setShowVersions] = useState<boolean>(false);
+    const [showAddSubjectModal, setShowAddSubjectModal] = useState<boolean>(false);
+    const [subjects, setSubjects] = useState<any[]>([]);
+    const [addSubjectData, setAddSubjectData] = useState({
+        asignatura_id: "",
+        semestre_sugerido: 1,
+        creditos: 1,
+    });
+
+    const resetAddSubjectData = () => {
+        setAddSubjectData({
+            asignatura_id: "",
+            semestre_sugerido: 1,
+            creditos: 1,
+        });
+    };
 
     const loadStudyPlans = async () => {
         setLoading(true);
@@ -55,8 +70,18 @@ const StudyPlanList: React.FC = () => {
         }
     };
 
+    const loadSubjects = async () => {
+        try {
+            const subjectsData = await asignaturaService.getAsignaturas();
+            setSubjects(subjectsData);
+        } catch (error) {
+            console.error("Error al cargar asignaturas:", error);
+        }
+    };
+
     useEffect(() => {
         loadCareers();
+        loadSubjects();
     }, []);
 
     useEffect(() => {
@@ -80,61 +105,52 @@ const StudyPlanList: React.FC = () => {
         });
     }, [studyPlans, selectedVersion]);
 
-    const handleAddSubject = async () => {
+    const handleOpenAddSubject = () => {
         if (!selectedCareer) {
             toast.error("Por favor seleccione una carrera primero");
             return;
         }
-        
-        const { value: formValues } = await Swal.fire({
-            title: "Agregar Asignatura al Plan de Estudios",
-            html: `
-                <div style="text-align: left; margin: 20px;">
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Asignatura:</label>
-                        <select id="subject-select" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                            <option value="">Seleccione una asignatura...</option>
-                        </select>
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Semestre Sugerido:</label>
-                        <input type="number" id="semester-input" min="1" max="10" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    </div>
-                    <div style="margin-bottom: 15px;">
-                        <label style="display: block; margin-bottom: 5px; font-weight: bold;">Créditos:</label>
-                        <input type="number" id="credits-input" min="1" max="10" style="width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px;">
-                    </div>
-                </div>
-            `,
-            showCancelButton: true,
-            confirmButtonText: "Agregar",
-            cancelButtonText: "Cancelar",
-            preConfirm: () => {
-                const subjectSelect = (document.getElementById('subject-select') as HTMLSelectElement);
-                const semesterInput = (document.getElementById('semester-input') as HTMLInputElement);
-                const creditsInput = (document.getElementById('credits-input') as HTMLInputElement);
-                
-                if (!subjectSelect.value) {
-                    Swal.showValidationMessage('Por favor seleccione una asignatura');
-                    return false;
-                }
-                
-                return {
-                    asignatura_id: subjectSelect.value,
-                    semestre_sugerido: parseInt(semesterInput.value),
-                    creditos: parseInt(creditsInput.value)
-                };
-            }
-        });
+        setShowAddSubjectModal(true);
+    };
 
-        if (formValues) {
-            try {
-                await studyPlanService.addSubjectToStudyPlan(selectedCareer, formValues);
-                toast.success("Asignatura agregada exitosamente");
-                loadStudyPlans();
-            } catch (error: any) {
-                toast.error(error.response?.data?.message || "Error al agregar asignatura");
-            }
+    const handleCloseAddSubject = () => {
+        setShowAddSubjectModal(false);
+        resetAddSubjectData();
+    };
+
+    const handleAddSubjectChange = (
+        e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+    ) => {
+        const { name, value } = e.target;
+        setAddSubjectData(prev => ({
+            ...prev,
+            [name]: name === "asignatura_id" ? value : parseInt(value, 10) || 0,
+        }));
+    };
+
+    const handleSubmitAddSubject = async () => {
+        if (!addSubjectData.asignatura_id) {
+            toast.error("Por favor seleccione una asignatura");
+            return;
+        }
+
+        if (addSubjectData.semestre_sugerido < 1 || addSubjectData.semestre_sugerido > 10) {
+            toast.error("El semestre sugerido debe estar entre 1 y 10");
+            return;
+        }
+
+        if (addSubjectData.creditos < 1 || addSubjectData.creditos > 10) {
+            toast.error("Los créditos deben estar entre 1 y 10");
+            return;
+        }
+
+        try {
+            await studyPlanService.addSubjectToStudyPlan(selectedCareer, addSubjectData);
+            toast.success("Asignatura agregada exitosamente");
+            handleCloseAddSubject();
+            loadStudyPlans();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "Error al agregar asignatura");
         }
     };
 
@@ -193,37 +209,6 @@ const StudyPlanList: React.FC = () => {
         }));
         return Array.from(versions).sort((a, b) => b - a);
     }, [studyPlans]);
-
-    // Cargar asignaturas dinámicamente
-    useEffect(() => {
-        const loadSubjects = async () => {
-            try {
-                const subjects = await asignaturaService.getAsignaturas();
-                const select = document.getElementById('subject-select') as HTMLSelectElement;
-                if (select) {
-                    select.innerHTML = '<option value="">Seleccione una asignatura...</option>';
-                    subjects.forEach((subject: any) => {
-                        const option = document.createElement('option');
-                        option.value = subject.id;
-                        option.textContent = subject.nombre;
-                        select.appendChild(option);
-                    });
-                }
-            } catch (error) {
-                console.error("Error al cargar asignaturas:", error);
-            }
-        };
-
-        // Solo cargar si el modal está abierto
-        const checkForModal = setInterval(() => {
-            const select = document.getElementById('subject-select') as HTMLSelectElement;
-            if (select && select.options.length <= 1) {
-                loadSubjects();
-            }
-        }, 500);
-
-        return () => clearInterval(checkForModal);
-    }, []);
 
     return (
         <div className="p-4 md:p-6 2xl:p-10">
@@ -293,7 +278,7 @@ const StudyPlanList: React.FC = () => {
                     {selectedCareer && (
                         <div className="mb-6 flex gap-2">
                             <button
-                                onClick={handleAddSubject}
+                                onClick={handleOpenAddSubject}
                                 className="px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
                             >
                                 Agregar Asignatura
@@ -304,6 +289,78 @@ const StudyPlanList: React.FC = () => {
                             >
                                 Crear Nueva Versión
                             </button>
+                        </div>
+                    )}
+
+                    {showAddSubjectModal && (
+                        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+                            <div className="w-full max-w-lg rounded-xl bg-white p-6 shadow-xl dark:bg-boxdark">
+                                <div className="mb-4 flex items-center justify-between">
+                                    <h4 className="text-lg font-semibold text-black dark:text-white">Agregar Asignatura</h4>
+                                    <button
+                                        onClick={handleCloseAddSubject}
+                                        className="text-black transition hover:text-gray-500 dark:text-white dark:hover:text-gray-300"
+                                    >
+                                        Cerrar
+                                    </button>
+                                </div>
+                                <div className="grid gap-4">
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-black dark:text-white">Asignatura</label>
+                                        <select
+                                            name="asignatura_id"
+                                            value={addSubjectData.asignatura_id}
+                                            onChange={handleAddSubjectChange}
+                                            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                                        >
+                                            <option value="">Seleccione una asignatura...</option>
+                                            {subjects.map((subject) => (
+                                                <option key={subject.id} value={subject.id}>
+                                                    {subject.nombre}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-black dark:text-white">Semestre sugerido</label>
+                                        <input
+                                            type="number"
+                                            name="semestre_sugerido"
+                                            min={1}
+                                            max={10}
+                                            value={addSubjectData.semestre_sugerido}
+                                            onChange={handleAddSubjectChange}
+                                            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="mb-2 block text-sm font-medium text-black dark:text-white">Créditos</label>
+                                        <input
+                                            type="number"
+                                            name="creditos"
+                                            min={1}
+                                            max={10}
+                                            value={addSubjectData.creditos}
+                                            onChange={handleAddSubjectChange}
+                                            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                                        />
+                                    </div>
+                                </div>
+                                <div className="mt-6 flex justify-end gap-3">
+                                    <button
+                                        onClick={handleCloseAddSubject}
+                                        className="rounded border border-stroke bg-gray-100 px-5 py-2 text-black transition hover:bg-gray-200 dark:border-form-strokedark dark:bg-gray-800 dark:text-white dark:hover:bg-gray-700"
+                                    >
+                                        Cancelar
+                                    </button>
+                                    <button
+                                        onClick={handleSubmitAddSubject}
+                                        className="rounded bg-primary px-5 py-2 text-white transition hover:bg-primary/90"
+                                    >
+                                        Agregar
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     )}
 

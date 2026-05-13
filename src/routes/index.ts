@@ -47,6 +47,7 @@ const SemesterCreate = lazy(() => import('../pages/Academic/Semesters/Create'));
 const SemesterUpdate = lazy(() => import('../pages/Academic/Semesters/Update'));
 
 const StudyPlanList = lazy(() => import('../pages/Academic/StudyPlans/StudyPlanList'));
+const StudyPlanUpdate = lazy(() => import('../pages/Academic/StudyPlans/Update'));
 
 const SubjectList = lazy(() => import('../pages/Academic/Subjects/SubjectList'));
 
@@ -166,6 +167,15 @@ const coreRoutes = [
     title: 'Planes de Estudio',
 
     component: StudyPlanList,
+
+  },
+  {
+
+    path: '/academic/study-plans/edit/:id',
+
+    title: 'Editar Plan de Estudio',
+
+    component: StudyPlanUpdate,
 
   },
 

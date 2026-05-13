@@ -26,7 +26,7 @@ export type SearchStudentApi = {
 
 class MatriculaService {
   async createMatricula(payload: CreateMatriculaPayload) {
-    return api.post("/matriculas", payload);
+    return api.post("/academic/registrations", payload);
   }
 
   async getCarreras() {

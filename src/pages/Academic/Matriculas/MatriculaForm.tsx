@@ -49,7 +49,7 @@ const MatriculaForm = () => {
   const [selectedEstudianteId, setSelectedEstudianteId] = useState<string>('');
   const [selectedCarreraId, setSelectedCarreraId] = useState<string>('');
   const [periodoIngreso, setPeriodoIngreso] = useState<string>('');
-  const [estadoAcademico, setEstadoAcademico] = useState<string>('activo');
+  const [estadoAcademico, setEstadoAcademico] = useState<string>('ACTIVE');
   const [estudianteSearch, setEstudianteSearch] = useState<string>('');
 
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -122,7 +122,7 @@ const MatriculaForm = () => {
     setSelectedEstudianteId('');
     setSelectedCarreraId('');
     setPeriodoIngreso('');
-    setEstadoAcademico('activo');
+    setEstadoAcademico('ACTIVE');
     setEstudianteSearch('');
     setEstudiantes([]);
     setShowSuggestions(false);
@@ -137,10 +137,10 @@ const MatriculaForm = () => {
     setSaving(true);
     try {
       const response = await matriculaService.createMatricula({
-        estudiante_id: selectedEstudianteId,
-        carrera_id: selectedCarreraId,
-        periodo_ingreso: periodoIngreso.trim(),
-        estado_academico: estadoAcademico,
+        student_id: selectedEstudianteId,
+        career_id: selectedCarreraId,
+        admission_period: periodoIngreso.trim(),
+        academic_status: estadoAcademico,
       });
 
       const successMessage = response.data?.message || 'Matricula creada correctamente';
@@ -243,9 +243,9 @@ const MatriculaForm = () => {
               onChange={(e) => setEstadoAcademico(e.target.value)}
               className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
             >
-              <option value="activo">Activo</option>
-              <option value="retirado">Retirado</option>
-              <option value="suspendido">Suspendido</option>
+              <option value="ACTIVE">Activo</option>
+              <option value="INACTIVE">Inactivo</option>
+              <option value="SUSPENDED">Suspendido</option>
             </select>
           </div>
 

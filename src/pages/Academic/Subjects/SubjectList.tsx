@@ -52,7 +52,7 @@ const SubjectList: React.FC = () => {
             filtered = filtered.filter(subject => subject.is_active);
         }
         
-        return filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+        return filtered.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
     }, [subjects, searchTerm, showInactive]);
 
     const handleCreate = () => {
