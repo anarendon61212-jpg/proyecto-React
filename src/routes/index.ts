@@ -57,6 +57,10 @@ const AssignDocente = lazy(() => import('../pages/Academic/Groups/AssignDocente'
 
 const MatriculaForm = lazy(() => import('../pages/Academic/Matriculas/MatriculaForm'));
 
+const EnrollmentForm = lazy(() => import('../pages/Academic/Inscripciones/EnrollmentForm'));
+
+const RubricManager = lazy(() => import('../pages/Evaluation/Rubrics/RubricManager'));
+
 
 const coreRoutes = [
 
@@ -226,6 +230,26 @@ const coreRoutes = [
     title: 'Matricular Estudiante en Carrera',
 
     component: MatriculaForm,
+
+  },
+
+  {
+
+    path: '/academic/inscripciones/create',
+
+    title: 'Inscribir Estudiante en Grupo',
+
+    component: EnrollmentForm,
+
+  },
+
+  {
+
+    path: '/evaluation/rubrics',
+
+    title: 'Rubricas de Evaluacion',
+
+    component: RubricManager,
 
   },
 

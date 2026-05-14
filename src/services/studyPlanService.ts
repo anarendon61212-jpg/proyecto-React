@@ -1,4 +1,5 @@
 import { api } from "../interceptors/authInterceptor";
+import { Asignatura } from "../models/Asignatura";
 import { PlanEstudio } from "../models/PlanEstudio";
 
 const API_URL = "/academic/study-plans";
@@ -183,6 +184,23 @@ class StudyPlanService {
             return (response.data?.data || response.data) as PlanEstudio;
         } catch (error: any) {
             console.error("Error al obtener plan de estudio por ID:", error.response?.data || error.message);
+            throw error;
+        }
+    }
+
+    /**
+     * Obtiene las asignaturas vinculadas a un plan de estudio
+     * GET /study-plans/:id/subjects
+     */
+    async getSubjectsByStudyPlan(studyPlanId: string): Promise<Asignatura[]> {
+        try {
+            const response = await api.get<ApiResponse<Asignatura[]>>(
+                `${API_URL}/${studyPlanId}/subjects`
+            );
+            const data = response.data?.data || response.data;
+            return Array.isArray(data) ? data : [];
+        } catch (error: any) {
+            console.error("Error al obtener asignaturas del plan de estudio:", error.response?.data || error.message);
             throw error;
         }
     }

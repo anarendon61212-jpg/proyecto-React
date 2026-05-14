@@ -322,6 +322,37 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
 
+                <li>
+                  <NavLink
+                    to="/academic/inscripciones/create"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/academic/inscripciones') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 1.5C7.34315 1.5 6 2.84315 6 4.5C6 6.15685 7.34315 7.5 9 7.5C10.6569 7.5 12 6.15685 12 4.5C12 2.84315 10.6569 1.5 9 1.5Z" fill="" />
+                      <path d="M3 15C3 11.6863 5.68629 9 9 9C10.986 9 12.7466 9.96428 13.8399 11.4477L12.7924 12.2205C11.9366 11.0592 10.558 10.5 9 10.5C6.51472 10.5 4.5 12.5147 4.5 15V16.5H10.5V18H3V15Z" fill="" />
+                      <path d="M12 12.75C12 12.3358 12.3358 12 12.75 12H15.75C16.1642 12 16.5 12.3358 16.5 12.75C16.5 13.1642 16.1642 13.5 15.75 13.5H12.75C12.3358 13.5 12 13.1642 12 12.75Z" fill="" />
+                      <path d="M13.5 11.25C13.5 10.8358 13.8358 10.5 14.25 10.5C14.6642 10.5 15 10.8358 15 11.25V14.25C15 14.6642 14.6642 15 14.25 15C13.8358 15 13.5 14.6642 13.5 14.25V11.25Z" fill="" />
+                    </svg>
+                    Inscribir en Grupo
+                  </NavLink>
+                </li>
+
+                <li>
+                  <NavLink
+                    to="/evaluation/rubrics"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 2.25C3.67157 2.25 3 2.92157 3 3.75V14.25C3 15.0784 3.67157 15.75 4.5 15.75H13.5C14.3284 15.75 15 15.0784 15 14.25V6.31066C15 5.91284 14.842 5.53131 14.5607 5.25001L12 2.68934C11.7187 2.40804 11.3372 2.25 10.9393 2.25H4.5ZM10.5 3.75V6H12.75L10.5 3.75ZM6 8.25C6 7.83579 6.33579 7.5 6.75 7.5H11.25C11.6642 7.5 12 7.83579 12 8.25C12 8.66421 11.6642 9 11.25 9H6.75C6.33579 9 6 8.66421 6 8.25ZM6.75 10.5C6.33579 10.5 6 10.8358 6 11.25C6 11.6642 6.33579 12 6.75 12H11.25C11.6642 12 12 11.6642 12 11.25C12 10.8358 11.6642 10.5 11.25 10.5H6.75Z" fill="" />
+                    </svg>
+                    Rubricas
+                  </NavLink>
+                </li>
+
               {/* <!-- Menu Item Profile --> */}
               <li>
                 <NavLink
