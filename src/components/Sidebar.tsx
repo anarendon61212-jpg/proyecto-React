@@ -353,6 +353,22 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
 
+                <li>
+                  <NavLink
+                    to="/evaluation/associations"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 3C3.67157 3 3 3.67157 3 4.5V13.5C3 14.3284 3.67157 15 4.5 15H8.25C8.66421 15 9 14.6642 9 14.25C9 13.8358 8.66421 13.5 8.25 13.5H4.5V4.5H13.5V8.25C13.5 8.66421 13.8358 9 14.25 9C14.6642 9 15 8.66421 15 8.25V4.5C15 3.67157 14.3284 3 13.5 3H4.5Z" fill="" />
+                      <path d="M10.5 11.25C10.5 10.8358 10.8358 10.5 11.25 10.5H15.75C16.1642 10.5 16.5 10.8358 16.5 11.25C16.5 11.6642 16.1642 12 15.75 12H11.25C10.8358 12 10.5 11.6642 10.5 11.25Z" fill="" />
+                      <path d="M12.75 9C13.1642 9 13.5 9.33579 13.5 9.75V14.25C13.5 14.6642 13.1642 15 12.75 15C12.3358 15 12 14.6642 12 14.25V9.75C12 9.33579 12.3358 9 12.75 9Z" fill="" />
+                    </svg>
+                    Asociar Rubrica
+                  </NavLink>
+                </li>
+
               {/* <!-- Menu Item Profile --> */}
               <li>
                 <NavLink

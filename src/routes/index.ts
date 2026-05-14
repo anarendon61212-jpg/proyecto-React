@@ -61,6 +61,8 @@ const EnrollmentForm = lazy(() => import('../pages/Academic/Inscripciones/Enroll
 
 const RubricManager = lazy(() => import('../pages/Evaluation/Rubrics/RubricManager'));
 
+const EvaluationRubricAssociation = lazy(() => import('../pages/Evaluation/Associations/EvaluationRubricAssociation'));
+
 
 const coreRoutes = [
 
@@ -250,6 +252,16 @@ const coreRoutes = [
     title: 'Rubricas de Evaluacion',
 
     component: RubricManager,
+
+  },
+
+  {
+
+    path: '/evaluation/associations',
+
+    title: 'Asociar Rubrica a Evaluacion',
+
+    component: EvaluationRubricAssociation,
 
   },
 

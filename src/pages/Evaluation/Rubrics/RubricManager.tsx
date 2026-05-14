@@ -26,6 +26,21 @@ type SubjectApi = {
 
 type SubjectAssociationMap = Record<string, string>;
 
+type StoredScaleTemplate = {
+  id: string;
+  name: string;
+  scales: NormalizedScale[];
+  createdAt: string;
+};
+
+type ReusableScaleOption = {
+  id: string;
+  name: string;
+  scales: NormalizedScale[];
+  helperText: string;
+  source: 'guardada' | 'criterio';
+};
+
 type ScaleForm = {
   localId: string;
   name: string;
@@ -79,6 +94,46 @@ const createEmptyCriterion = (): CriterionForm => ({
   scales: [createEmptyScale(), createEmptyScale()],
 });
 
+const cloneScalesToForm = (scales: NormalizedScale[]): ScaleForm[] =>
+  scales.map((scale) => ({
+    localId: createLocalId(),
+    name: scale.name,
+    description: scale.description,
+    value: String(scale.value),
+  }));
+
+const normalizePersistedScales = (scales: ScaleApi[]): NormalizedScale[] | null => {
+  if (scales.length < 2 || scales.length > 5) {
+    return null;
+  }
+
+  const normalizedScales: NormalizedScale[] = [];
+  const usedValues = new Set<number>();
+
+  for (const scale of scales) {
+    const scaleName = scale.name.trim();
+    const scaleDescription = scale.description.trim();
+    const parsedValue = Number(scale.value);
+
+    if (!scaleName || !scaleDescription || !Number.isFinite(parsedValue)) {
+      return null;
+    }
+
+    if (usedValues.has(parsedValue)) {
+      return null;
+    }
+
+    usedValues.add(parsedValue);
+    normalizedScales.push({
+      name: scaleName,
+      description: scaleDescription,
+      value: parsedValue,
+    });
+  }
+
+  return normalizedScales.sort((left, right) => left.value - right.value);
+};
+
 const pickText = (...values: Array<string | undefined | null>) => {
   for (const value of values) {
     if (typeof value === 'string' && value.trim().length > 0) {
@@ -129,11 +184,15 @@ const RubricManager = () => {
   const [scalesData, setScalesData] = useState<ScaleApi[]>([]);
   const [subjectAssociations, setSubjectAssociations] =
     useLocalStorage<SubjectAssociationMap>('rubric_subject_associations', {});
+  const [savedScaleTemplates, setSavedScaleTemplates] =
+    useLocalStorage<StoredScaleTemplate[]>('rubric_scale_templates', []);
 
   const [selectedSubjectId, setSelectedSubjectId] = useState('');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [criteria, setCriteria] = useState<CriterionForm[]>([createEmptyCriterion()]);
+  const [selectedReusableScaleByCriterion, setSelectedReusableScaleByCriterion] =
+    useState<Record<string, string>>({});
   const [showArchived, setShowArchived] = useState(false);
 
   const [loading, setLoading] = useState(false);
@@ -147,6 +206,11 @@ const RubricManager = () => {
   const subjectsById = useMemo(
     () => new Map(subjects.map((subject) => [subject.id, subject])),
     [subjects],
+  );
+
+  const rubricsById = useMemo(
+    () => new Map(rubrics.map((rubric) => [rubric.id, rubric])),
+    [rubrics],
   );
 
   const selectedSubject = useMemo(
@@ -174,6 +238,47 @@ const RubricManager = () => {
 
     return grouped;
   }, [scalesData]);
+
+  const reusableScaleOptions = useMemo(() => {
+    const storedOptions: ReusableScaleOption[] = savedScaleTemplates
+      .filter((template) => template.scales.length >= 2 && template.scales.length <= 5)
+      .map((template) => ({
+        id: `saved:${template.id}`,
+        name: template.name,
+        scales: template.scales,
+        helperText: `${template.scales.length} niveles guardados para reutilizar`,
+        source: 'guardada',
+      }));
+
+    const criterionOptions: ReusableScaleOption[] = criteriaData
+      .map((criterion) => {
+        const normalizedScales = normalizePersistedScales(
+          scalesByCriterionId.get(criterion.id) || [],
+        );
+
+        if (!normalizedScales) {
+          return null;
+        }
+
+        const rubric = rubricsById.get(criterion.rubric_id);
+
+        return {
+          id: `criterion:${criterion.id}`,
+          name: criterion.name,
+          scales: normalizedScales,
+          helperText: `${rubric?.title || 'Rubrica'} - ${normalizedScales.length} niveles`,
+          source: 'criterio',
+        };
+      })
+      .filter((option): option is ReusableScaleOption => option !== null);
+
+    return [...storedOptions, ...criterionOptions];
+  }, [criteriaData, rubricsById, savedScaleTemplates, scalesByCriterionId]);
+
+  const reusableScaleOptionsById = useMemo(
+    () => new Map(reusableScaleOptions.map((option) => [option.id, option])),
+    [reusableScaleOptions],
+  );
 
   const rubricCards = useMemo(() => {
     const groupedCriteria = new Map<string, CriterionApi[]>();
@@ -245,6 +350,7 @@ const RubricManager = () => {
     setTitle('');
     setDescription('');
     setCriteria([createEmptyCriterion()]);
+    setSelectedReusableScaleByCriterion({});
   };
 
   const updateCriterion = (
@@ -266,13 +372,18 @@ const RubricManager = () => {
   };
 
   const removeCriterion = (criterionLocalId: string) => {
-    setCriteria((current) => {
-      if (current.length === 1) {
-        toast.error('La rubrica debe tener al menos un criterio');
-        return current;
-      }
+    if (criteria.length === 1) {
+      toast.error('La rubrica debe tener al menos un criterio');
+      return;
+    }
 
-      return current.filter((criterion) => criterion.localId !== criterionLocalId);
+    setCriteria((current) =>
+      current.filter((criterion) => criterion.localId !== criterionLocalId),
+    );
+    setSelectedReusableScaleByCriterion((current) => {
+      const updated = { ...current };
+      delete updated[criterionLocalId];
+      return updated;
     });
   };
 
@@ -338,6 +449,138 @@ const RubricManager = () => {
     );
   };
 
+  const normalizeCriterionScales = (
+    criterion: CriterionForm,
+    criterionIndex: number,
+  ): NormalizedScale[] | null => {
+    if (criterion.scales.length < 2 || criterion.scales.length > 5) {
+      toast.error(`El criterio ${criterionIndex + 1} debe tener entre 2 y 5 escalas`);
+      return null;
+    }
+
+    const normalizedScales: NormalizedScale[] = [];
+    const usedValues = new Set<number>();
+
+    for (let scaleIndex = 0; scaleIndex < criterion.scales.length; scaleIndex += 1) {
+      const scale = criterion.scales[scaleIndex];
+      const scaleName = scale.name.trim();
+      const scaleDescription = scale.description.trim();
+      const parsedValue = Number(scale.value);
+
+      if (!scaleName) {
+        toast.error(
+          `La escala ${scaleIndex + 1} del criterio ${criterionIndex + 1} debe tener nombre`,
+        );
+        return null;
+      }
+
+      if (!scaleDescription) {
+        toast.error(
+          `La escala ${scaleIndex + 1} del criterio ${criterionIndex + 1} debe tener descripcion`,
+        );
+        return null;
+      }
+
+      if (!Number.isFinite(parsedValue)) {
+        toast.error(
+          `La escala ${scaleIndex + 1} del criterio ${criterionIndex + 1} debe tener un valor numerico`,
+        );
+        return null;
+      }
+
+      if (usedValues.has(parsedValue)) {
+        toast.error(
+          `Los valores de escala del criterio ${criterionIndex + 1} no pueden repetirse`,
+        );
+        return null;
+      }
+
+      usedValues.add(parsedValue);
+      normalizedScales.push({
+        name: scaleName,
+        description: scaleDescription,
+        value: parsedValue,
+      });
+    }
+
+    return normalizedScales.sort((left, right) => left.value - right.value);
+  };
+
+  const applyReusableScale = (criterionLocalId: string) => {
+    const reusableScaleId = selectedReusableScaleByCriterion[criterionLocalId];
+
+    if (!reusableScaleId) {
+      toast.error('Selecciona una escala reutilizable');
+      return;
+    }
+
+    const selectedScaleOption = reusableScaleOptionsById.get(reusableScaleId);
+
+    if (!selectedScaleOption) {
+      toast.error('La escala reutilizable seleccionada ya no esta disponible');
+      return;
+    }
+
+    setCriteria((current) =>
+      current.map((criterion) =>
+        criterion.localId === criterionLocalId
+          ? { ...criterion, scales: cloneScalesToForm(selectedScaleOption.scales) }
+          : criterion,
+      ),
+    );
+
+    toast.success('La escala se aplico al criterio');
+  };
+
+  const saveScaleTemplate = async (
+    criterion: CriterionForm,
+    criterionIndex: number,
+  ) => {
+    const normalizedScales = normalizeCriterionScales(criterion, criterionIndex);
+
+    if (!normalizedScales) {
+      return;
+    }
+
+    const defaultTemplateName = criterion.name.trim()
+      ? `Escala ${criterion.name.trim()}`
+      : `Escala criterio ${criterionIndex + 1}`;
+
+    const result = await Swal.fire({
+      title: 'Guardar escala reutilizable',
+      input: 'text',
+      inputLabel: 'Nombre de la escala',
+      inputValue: defaultTemplateName,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Guardar',
+      cancelButtonText: 'Cancelar',
+      inputValidator: (value) => {
+        if (!value || !value.trim()) {
+          return 'Ingresa un nombre para la escala';
+        }
+
+        return undefined;
+      },
+    });
+
+    if (!result.isConfirmed || !result.value?.trim()) {
+      return;
+    }
+
+    setSavedScaleTemplates((current) => [
+      {
+        id: createLocalId(),
+        name: result.value.trim(),
+        scales: normalizedScales,
+        createdAt: new Date().toISOString(),
+      },
+      ...current,
+    ]);
+
+    toast.success('La escala se guardo para reutilizarla en otros criterios');
+  };
+
   const validateForm = (): NormalizedCriterion[] | null => {
     if (!selectedSubjectId) {
       toast.error('Selecciona una asignatura');
@@ -383,56 +626,10 @@ const RubricManager = () => {
         return null;
       }
 
-      if (criterion.scales.length < 2 || criterion.scales.length > 5) {
-        toast.error(
-          `El criterio ${index + 1} debe tener entre 2 y 5 escalas`,
-        );
+      const normalizedScales = normalizeCriterionScales(criterion, index);
+
+      if (!normalizedScales) {
         return null;
-      }
-
-      const normalizedScales: NormalizedScale[] = [];
-      const usedValues = new Set<number>();
-
-      for (let scaleIndex = 0; scaleIndex < criterion.scales.length; scaleIndex += 1) {
-        const scale = criterion.scales[scaleIndex];
-        const scaleName = scale.name.trim();
-        const scaleDescription = scale.description.trim();
-        const parsedValue = Number(scale.value);
-
-        if (!scaleName) {
-          toast.error(
-            `La escala ${scaleIndex + 1} del criterio ${index + 1} debe tener nombre`,
-          );
-          return null;
-        }
-
-        if (!scaleDescription) {
-          toast.error(
-            `La escala ${scaleIndex + 1} del criterio ${index + 1} debe tener descripcion`,
-          );
-          return null;
-        }
-
-        if (!Number.isFinite(parsedValue)) {
-          toast.error(
-            `La escala ${scaleIndex + 1} del criterio ${index + 1} debe tener un valor numerico`,
-          );
-          return null;
-        }
-
-        if (usedValues.has(parsedValue)) {
-          toast.error(
-            `Los valores de escala del criterio ${index + 1} no pueden repetirse`,
-          );
-          return null;
-        }
-
-        usedValues.add(parsedValue);
-        normalizedScales.push({
-          name: scaleName,
-          description: scaleDescription,
-          value: parsedValue,
-        });
       }
 
       computedWeight += parsedWeight;
@@ -617,6 +814,10 @@ const RubricManager = () => {
               Define la rubrica, sus criterios y las escalas necesarias para poder
               guardarla como borrador o publicarla.
             </p>
+            <p className="text-sm text-bodydark2">
+              Tambien puedes reutilizar escalas guardadas o escalas ya definidas
+              previamente en otros criterios.
+            </p>
           </div>
 
           <div className="space-y-5">
@@ -782,23 +983,90 @@ const RubricManager = () => {
                     </div>
 
                     <div className="mt-5 rounded border border-stroke bg-gray-1 p-4 dark:border-strokedark dark:bg-meta-4">
-                      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="mb-4 flex flex-col gap-4">
                         <div>
                           <h6 className="font-medium text-black dark:text-white">
                             Escalas del criterio
                           </h6>
                           <p className="text-sm text-bodydark2">
                             Cada criterio debe tener entre 2 y 5 escalas para
-                            poder publicarse.
+                            poder publicarse y sus valores deben ser unicos.
                           </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => addScale(criterion.localId)}
-                          className="rounded border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary hover:text-white"
-                        >
-                          Agregar escala
-                        </button>
+
+                        <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
+                          <div>
+                            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                              Reutilizar escala previa
+                            </label>
+                            <select
+                              value={
+                                selectedReusableScaleByCriterion[criterion.localId] || ''
+                              }
+                              onChange={(event) =>
+                                setSelectedReusableScaleByCriterion((current) => ({
+                                  ...current,
+                                  [criterion.localId]: event.target.value,
+                                }))
+                              }
+                              className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
+                            >
+                              <option value="">Selecciona una escala...</option>
+                              {reusableScaleOptions.map((option) => (
+                                <option key={option.id} value={option.id}>
+                                  {option.name} -{' '}
+                                  {option.source === 'guardada'
+                                    ? 'Plantilla guardada'
+                                    : 'Criterio existente'}
+                                </option>
+                              ))}
+                            </select>
+                            {selectedReusableScaleByCriterion[criterion.localId] &&
+                              reusableScaleOptionsById.get(
+                                selectedReusableScaleByCriterion[criterion.localId],
+                              ) && (
+                                <p className="mt-1 text-xs text-bodydark2">
+                                  {
+                                    reusableScaleOptionsById.get(
+                                      selectedReusableScaleByCriterion[criterion.localId],
+                                    )?.helperText
+                                  }
+                                </p>
+                              )}
+                            {reusableScaleOptions.length === 0 && (
+                              <p className="mt-1 text-xs text-bodydark2">
+                                Aun no hay escalas reutilizables disponibles.
+                              </p>
+                            )}
+                          </div>
+
+                          <button
+                            type="button"
+                            onClick={() => applyReusableScale(criterion.localId)}
+                            className="rounded border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary hover:text-white"
+                          >
+                            Aplicar escala
+                          </button>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                saveScaleTemplate(criterion, criterionIndex)
+                              }
+                              className="rounded border border-success px-4 py-2 text-sm font-medium text-success hover:bg-success hover:text-white"
+                            >
+                              Guardar plantilla
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => addScale(criterion.localId)}
+                              className="rounded border border-primary px-4 py-2 text-sm font-medium text-primary hover:bg-primary hover:text-white"
+                            >
+                              Agregar escala
+                            </button>
+                          </div>
+                        </div>
                       </div>
 
                       <div className="space-y-3">
@@ -1052,6 +1320,25 @@ const RubricManager = () => {
                               </span>
                             </div>
                           </div>
+
+                          {(scalesByCriterionId.get(criterion.id)?.length || 0) > 0 && (
+                            <div className="mt-3 flex flex-wrap gap-2">
+                              {(scalesByCriterionId.get(criterion.id) || [])
+                                .slice()
+                                .sort(
+                                  (left, right) =>
+                                    Number(left.value) - Number(right.value),
+                                )
+                                .map((scale) => (
+                                  <span
+                                    key={scale.id}
+                                    className="rounded bg-white px-2.5 py-1 text-xs font-medium text-black dark:bg-boxdark dark:text-white"
+                                  >
+                                    {scale.name}: {scale.value}
+                                  </span>
+                                ))}
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
