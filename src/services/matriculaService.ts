@@ -1,16 +1,14 @@
 import { api } from "../interceptors/authInterceptor";
 
 export type CreateMatriculaPayload = {
-  estudiante_id: string;
-  carrera_id: string;
-  periodo_ingreso: string;
-  estado_academico: string;
+  student_id: string;
+  career_id: string;
+  admission_period: string;
+  academic_status: string;
 };
 
 export type SearchStudentApi = {
   id: string;
-  role?: string;
-  is_active?: boolean;
   nombre?: string;
   apellido?: string;
   cedula?: string;
@@ -24,8 +22,27 @@ export type SearchStudentApi = {
   };
 };
 
+export type RegistrationApi = {
+  id: string;
+  student_id?: string;
+  career_id?: string;
+  admission_period?: string;
+  academic_status?: string;
+  is_active?: boolean;
+};
+
+export type SemesterApi = {
+  id: string;
+  name?: string;
+  code?: string;
+  start_date?: string;
+  end_date?: string;
+  is_active?: boolean;
+};
+
 class MatriculaService {
   async createMatricula(payload: CreateMatriculaPayload) {
+    console.log('Payload matrícula:', payload);
     return api.post("/academic/registrations", payload);
   }
 
@@ -34,22 +51,31 @@ class MatriculaService {
     return api.get("/academic/careers");
   }
 
+  async getRegistrations() {
+    return api.get("/academic/registrations");
+  }
+
+  async getSemesters() {
+    return api.get("/academic/semesters");
+  }
+
+  async updateRegistration(registrationId: string, payload: Partial<CreateMatriculaPayload> & { is_active?: boolean }) {
+    return api.put(`/academic/registrations/${registrationId}`, payload);
+  }
+
   async searchEstudiantes(search: string) {
-    const response = await api.get("/users");
-    const users = response.data?.data || response.data || [];
+    const response = await api.get("/academic/students");
+    const students = response.data?.data || response.data || [];
     const term = search.trim().toLowerCase();
 
-    if (!Array.isArray(users)) {
+    if (!Array.isArray(students)) {
       return { data: [] };
     }
 
-    const filtered = users.filter((user: SearchStudentApi) => {
-      const role = (user.role || "").toUpperCase();
-      if (role !== "STUDENT") return false;
-
-      const firstName = (user.nombre || user.first_name || user.profile?.first_name || "").toLowerCase();
-      const lastName = (user.apellido || user.last_name || user.profile?.last_name || "").toLowerCase();
-      const identification = (user.cedula || user.identification || user.profile?.identification || "").toLowerCase();
+    const filtered = students.filter((student: SearchStudentApi) => {
+      const firstName = (student.nombre || student.first_name || student.profile?.first_name || "").toLowerCase();
+      const lastName = (student.apellido || student.last_name || student.profile?.last_name || "").toLowerCase();
+      const identification = (student.cedula || student.identification || student.profile?.identification || "").toLowerCase();
 
       return (
         firstName.includes(term) ||
