@@ -6,11 +6,12 @@ import { Provider } from 'react-redux';
 import ECommerce from './pages/Dashboard/ECommerce';
 import SignIn from './pages/Authentication/SignIn';
 import SignUp from './pages/Authentication/SignUp';
+import GradeStudents from './pages/Evaluation/Grades/GradeStudents';
 import Loader from './common/Loader';
 import routes from './routes';
 import { store } from './store/store';
 
-import ProtectedRoute from "../src/components/Auth/ProtectedRoute";
+import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 const DefaultLayout = lazy(() => import('./layout/DefaultLayout'));
 
@@ -42,6 +43,14 @@ function App() {
               </Suspense>
             }>
               <Route index element={<ECommerce />} />
+              <Route
+                path="/evaluation/grades/:evaluationId"
+                element={
+                  <Suspense fallback={<Loader />}>
+                    <GradeStudents />
+                  </Suspense>
+                }
+              />
               {routes.map((routes, index) => {
                 const { path, component: Component } = routes;
                 return (
