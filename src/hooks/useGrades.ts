@@ -5,20 +5,25 @@ import { rubricaService } from '../services/rubricaService';
 import { inscripcionService } from '../services/inscripcionService';
 import { matriculaService } from '../services/matriculaService';
 import { gradeService } from '../services/gradeService';
+import { finalGradeService } from '../services/finalGradeService';
 import type {
+  GradeApi,
   StudentGradeState,
   CriterionOption,
   GradeDetailPayload,
 } from '../types/grade';
 
 export const useGrades = (providedEvaluationId?: string) => {
-  const params = useParams();
-  const evaluationId = providedEvaluationId || (params as any).evaluationId;
+  const { evaluationId: routeEvaluationId } = useParams<{ evaluationId?: string }>();
+  const evaluationId = (providedEvaluationId || routeEvaluationId || '').trim();
 
   const [loading, setLoading] = useState(true);
+  const [loadingGrades, setLoadingGrades] = useState(false);
   const [savingMap, setSavingMap] = useState<Record<string, boolean>>({});
   const [students, setStudents] = useState<StudentGradeState[]>([]);
   const [evaluation, setEvaluation] = useState<any | null>(null);
+  const [groupFinalized, setGroupFinalized] = useState(false);
+  const [groupFinalizedAt, setGroupFinalizedAt] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -38,12 +43,19 @@ export const useGrades = (providedEvaluationId?: string) => {
 
       setEvaluation(picked);
 
-      const [criteriaList, scalesList, enrollmentsResponse, studentsResponse] =
+      const finalizationStatus = await finalGradeService.getFinalizationStatus(
+        picked.group_id,
+      );
+      setGroupFinalized(!!finalizationStatus.finalized);
+      setGroupFinalizedAt(finalizationStatus.finalized_at || null);
+
+      const [criteriaList, scalesList, enrollmentsResponse, studentsResponse, gradesResponse] =
         await Promise.all([
           rubricaService.getCriteria(),
           rubricaService.getScales(),
           inscripcionService.getEnrollments(),
           matriculaService.searchEstudiantes(''),
+          gradeService.getEvaluationGrades(evaluationId),
         ]);
 
       const rubricId = picked.rubric_id;
@@ -53,10 +65,17 @@ export const useGrades = (providedEvaluationId?: string) => {
       );
 
       const scalesByCriterion = new Map<string, any[]>();
+      const scaleById = new Map<string, any>();
       (scalesList || []).forEach((scale: any) => {
         const arr = scalesByCriterion.get(scale.criterion_id) || [];
         arr.push(scale);
         scalesByCriterion.set(scale.criterion_id, arr);
+        scaleById.set(scale.id, scale);
+      });
+
+      const gradesByEnrollment = new Map<string, GradeApi>();
+      (gradesResponse || []).forEach((grade: GradeApi) => {
+        gradesByEnrollment.set(grade.enrollment_id, grade);
       });
 
       const enrollments = (enrollmentsResponse || []).filter(
@@ -71,7 +90,11 @@ export const useGrades = (providedEvaluationId?: string) => {
         });
       }
 
-      const buildCriteria = (criterion: any): CriterionOption => ({
+      const buildCriteria = (
+        criterion: any,
+        selectedScaleId: string | null,
+        selectedComment: string,
+      ): CriterionOption => ({
         criterion_id: criterion.id,
         name: criterion.name,
         weight: criterion.weight,
@@ -81,9 +104,36 @@ export const useGrades = (providedEvaluationId?: string) => {
           description: s.description,
           value: Number(s.value),
         })),
-        selected_scale_id: null,
-        comment: '',
+        selected_scale_id: selectedScaleId,
+        comment: selectedComment,
       });
+
+      const getGradeCriteriaState = (grade?: GradeApi | null) => {
+        const selectedScaleByCriterion = new Map<string, string>();
+        const commentByCriterion = new Map<string, string>();
+
+        (grade?.details || []).forEach((detail) => {
+          if (!detail.scale_id) {
+            return;
+          }
+
+          const scale = scaleById.get(detail.scale_id);
+          if (!scale) {
+            return;
+          }
+
+          selectedScaleByCriterion.set(scale.criterion_id, detail.scale_id);
+          commentByCriterion.set(scale.criterion_id, detail.comment || '');
+        });
+
+        return criteriaForRubric.map((criterion: any) =>
+          buildCriteria(
+            criterion,
+            selectedScaleByCriterion.get(criterion.id) || null,
+            commentByCriterion.get(criterion.id) || '',
+          ),
+        );
+      };
 
       const studentStates: StudentGradeState[] = (enrollments || []).map((en: any) => ({
         enrollment_id: en.id,
@@ -92,8 +142,11 @@ export const useGrades = (providedEvaluationId?: string) => {
           (studentsById.get(en.student_id)?.nombre ||
             studentsById.get(en.student_id)?.first_name ||
             '') as string,
-        criteria: criteriaForRubric.map(buildCriteria),
-        status: 'UNSAVED',
+        observations: gradesByEnrollment.get(en.id)?.observations || '',
+        is_locked:
+          gradesByEnrollment.get(en.id)?.is_locked || !!finalizationStatus.finalized,
+        criteria: getGradeCriteriaState(gradesByEnrollment.get(en.id) || null),
+        status: (gradesByEnrollment.get(en.id)?.status as StudentGradeState['status']) || 'UNSAVED',
       }));
 
       setStudents(studentStates);
@@ -101,12 +154,26 @@ export const useGrades = (providedEvaluationId?: string) => {
       console.error('useGrades loadData error', error);
       setStudents([]);
       setEvaluation(null);
+      setGroupFinalized(false);
+      setGroupFinalizedAt(null);
     } finally {
       setLoading(false);
+      setLoadingGrades(false);
     }
   }, [evaluationId]);
 
   useEffect(() => {
+    if (!evaluationId) {
+      setLoading(false);
+      setLoadingGrades(false);
+      setStudents([]);
+      setEvaluation(null);
+      setGroupFinalized(false);
+      setGroupFinalizedAt(null);
+      return;
+    }
+
+    setLoadingGrades(true);
     loadData();
   }, [loadData]);
 
@@ -148,6 +215,14 @@ export const useGrades = (providedEvaluationId?: string) => {
     [],
   );
 
+  const updateObservations = useCallback((enrollmentId: string, observations: string) => {
+    setStudents((current) =>
+      current.map((s) =>
+        s.enrollment_id === enrollmentId ? { ...s, observations } : s,
+      ),
+    );
+  }, []);
+
   const saveDraft = useCallback(async (enrollmentId: string) => {
     const state = students.find((s) => s.enrollment_id === enrollmentId);
     if (!state || !evaluation) return null;
@@ -160,6 +235,7 @@ export const useGrades = (providedEvaluationId?: string) => {
       evaluation_id: evaluation.id,
       enrollment_id: state.enrollment_id,
       status: 'DRAFT' as const,
+      observations: state.observations,
       details,
     };
 
@@ -195,6 +271,7 @@ export const useGrades = (providedEvaluationId?: string) => {
       evaluation_id: evaluation.id,
       enrollment_id: state.enrollment_id,
       status: 'SENT' as const,
+      observations: state.observations,
       details,
     };
 
@@ -220,16 +297,38 @@ export const useGrades = (providedEvaluationId?: string) => {
     return totalCriteria === 0 ? 0 : Math.round((answered / totalCriteria) * 100);
   }, [students]);
 
+  const observations = useMemo(
+    () =>
+      Object.fromEntries(
+        students.map((student) => [student.enrollment_id, student.observations || '']),
+      ),
+    [students],
+  );
+
+  const lockedMap = useMemo(
+    () =>
+      Object.fromEntries(
+        students.map((student) => [student.enrollment_id, !!student.is_locked]),
+      ),
+    [students],
+  );
+
   return {
     loading,
+    loadingGrades,
     evaluation,
     students,
     completeness,
     savingMap,
     updateSelectedScale,
     updateComment,
+    observations,
+    updateObservations,
+    lockedMap,
     saveDraft,
     submitGrade,
+    groupFinalized,
+    groupFinalizedAt,
     reload: loadData,
   };
 };

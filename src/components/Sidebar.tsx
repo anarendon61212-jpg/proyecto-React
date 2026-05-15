@@ -341,20 +341,6 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
                 <li>
                   <NavLink
-                    to="/evaluation/rubrics"
-                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                      pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
-                    }`}
-                  >
-                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M4.5 2.25C3.67157 2.25 3 2.92157 3 3.75V14.25C3 15.0784 3.67157 15.75 4.5 15.75H13.5C14.3284 15.75 15 15.0784 15 14.25V6.31066C15 5.91284 14.842 5.53131 14.5607 5.25001L12 2.68934C11.7187 2.40804 11.3372 2.25 10.9393 2.25H4.5ZM10.5 3.75V6H12.75L10.5 3.75ZM6 8.25C6 7.83579 6.33579 7.5 6.75 7.5H11.25C11.6642 7.5 12 7.83579 12 8.25C12 8.66421 11.6642 9 11.25 9H6.75C6.33579 9 6 8.66421 6 8.25ZM6.75 10.5C6.33579 10.5 6 10.8358 6 11.25C6 11.6642 6.33579 12 6.75 12H11.25C11.6642 12 12 11.6642 12 11.25C12 10.8358 11.6642 10.5 11.25 10.5H6.75Z" fill="" />
-                    </svg>
-                    Rubricas
-                  </NavLink>
-                </li>
-
-                <li>
-                  <NavLink
                     to="/evaluation/associations"
                     className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
                       pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
@@ -365,7 +351,22 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                       <path d="M10.5 11.25C10.5 10.8358 10.8358 10.5 11.25 10.5H15.75C16.1642 10.5 16.5 10.8358 16.5 11.25C16.5 11.6642 16.1642 12 15.75 12H11.25C10.8358 12 10.5 11.6642 10.5 11.25Z" fill="" />
                       <path d="M12.75 9C13.1642 9 13.5 9.33579 13.5 9.75V14.25C13.5 14.6642 13.1642 15 12.75 15C12.3358 15 12 14.6642 12 14.25V9.75C12 9.33579 12.3358 9 12.75 9Z" fill="" />
                     </svg>
-                    Asociar Rubrica
+                    Evaluaciones
+                  </NavLink>
+                </li>
+
+                <li>
+                  <NavLink
+                    to="/final-grades"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/final-grades') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 1.5C5.0294 1.5 1.86 4.668 1.86 8.6385C1.86 12.609 5.0294 15.7785 9 15.7785C12.9706 15.7785 16.14 12.609 16.14 8.6385C16.14 4.668 12.9706 1.5 9 1.5ZM9 14.3325C5.8374 14.3325 3.306 11.8011 3.306 8.6385C3.306 5.4759 5.8374 2.9445 9 2.9445C12.1626 2.9445 14.694 5.4759 14.694 8.6385C14.694 11.8011 12.1626 14.3325 9 14.3325Z" fill="" />
+                      <path d="M8.55074 5.29921C8.66559 5.11688 8.86231 5.0248 9.04464 5.0248C9.27098 5.0248 9.54712 5.1169 9.66197 5.29921L13.7563 11.7294C13.8719 11.9117 13.8719 12.161 13.7563 12.3433C13.6407 12.5256 13.4563 12.6777 13.2339 12.6777H4.85935C4.63684 12.6777 4.40158 12.5256 4.28673 12.3433C4.17188 12.161 4.17188 11.9117 4.28673 11.7294L8.55074 5.29921Z" fill="" />
+                    </svg>
+                    Notas finales
                   </NavLink>
                 </li>
 

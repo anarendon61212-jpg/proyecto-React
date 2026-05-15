@@ -12,14 +12,18 @@ const GradeStudentsPage: React.FC = () => {
 
   const {
     loading,
+    loadingGrades,
     evaluation,
     students,
     completeness,
     savingMap,
     updateSelectedScale,
     updateComment,
+    updateObservations,
     saveDraft,
     submitGrade,
+    groupFinalized,
+    groupFinalizedAt,
     reload,
   } = useGrades(evaluationId);
 
@@ -71,7 +75,7 @@ const GradeStudentsPage: React.FC = () => {
     }
   };
 
-  if (loading) {
+  if (loading || loadingGrades) {
     return (
       <div className="space-y-4 p-4 sm:p-6">
         <div className="h-8 w-56 animate-pulse rounded bg-gray-200 dark:bg-meta-4" />
@@ -113,6 +117,11 @@ const GradeStudentsPage: React.FC = () => {
         <div>
           <h2 className="text-xl font-bold text-black dark:text-white">Calificar estudiantes</h2>
           <p className="text-sm text-bodydark2">Selecciona una escala por criterio y agrega comentarios opcionales.</p>
+          {groupFinalized && (
+            <span className="mt-2 inline-flex rounded-full bg-success bg-opacity-10 px-3 py-1 text-xs font-medium text-success">
+              Consolidado oficialmente{groupFinalizedAt ? `: ${new Date(groupFinalizedAt).toLocaleString()}` : ''}
+            </span>
+          )}
         </div>
         <div className="flex flex-wrap gap-2">
           <button
@@ -132,6 +141,12 @@ const GradeStudentsPage: React.FC = () => {
         </div>
       </div>
 
+      {groupFinalized && (
+        <div className="rounded border border-warning/30 bg-warning/10 p-4 text-warning">
+          Edicion bloqueada: este grupo ya fue consolidado oficialmente en notas finales.
+        </div>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-4">
         <div className="lg:col-span-3">
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
@@ -146,6 +161,7 @@ const GradeStudentsPage: React.FC = () => {
                   data={s}
                   onChangeScale={(enId, criterionId, scaleId) => updateSelectedScale(enId, criterionId, scaleId)}
                   onChangeComment={(enId, criterionId, comment) => updateComment(enId, criterionId, comment)}
+                  onChangeObservations={(enId, observations) => updateObservations(enId, observations)}
                   onSaveDraft={handleSaveDraft}
                   onSubmit={handleSubmit}
                   saving={!!savingMap[s.enrollment_id]}

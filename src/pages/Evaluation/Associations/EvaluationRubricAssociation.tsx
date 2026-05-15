@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import toast from 'react-hot-toast';
 import Breadcrumb from '../../../components/Breadcrumb';
@@ -78,6 +78,7 @@ const formatWeight = (value?: number | string | null) => {
 };
 
 const EvaluationRubricAssociation = () => {
+  const navigate = useNavigate();
   const [evaluations, setEvaluations] = useState<EvaluationApi[]>([]);
   const [rubrics, setRubrics] = useState<RubricApi[]>([]);
   const [subjects, setSubjects] = useState<SubjectApi[]>([]);
@@ -316,19 +317,18 @@ const EvaluationRubricAssociation = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Asociar Rubrica a Evaluacion" />
+      <Breadcrumb pageName="Evaluaciones" />
 
       <div className="space-y-6">
         <div className="rounded-sm border border-stroke bg-white px-5 pb-6 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
           <div className="mb-6 flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <div>
               <h3 className="text-xl font-bold text-black dark:text-white">
-                Asociar Rubrica a Evaluacion
+                Evaluaciones
               </h3>
               <p className="text-sm text-bodydark2">
-                Cada evaluacion puede tener una sola rubrica asociada.
-                Solo se muestran rubricas publicadas y una misma rubrica puede
-                reutilizarse en multiples evaluaciones.
+                Centraliza aquí la asociación de rúbrica y el acceso a calificación.
+                Cada evaluación puede tener una sola rúbrica asociada.
               </p>
             </div>
 
@@ -374,11 +374,10 @@ const EvaluationRubricAssociation = () => {
         <div className="rounded-sm border border-stroke bg-white px-5 pb-6 pt-6 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5">
           <div className="mb-6 flex flex-col gap-2">
             <h3 className="text-xl font-bold text-black dark:text-white">
-              Evaluaciones Registradas
+              Evaluaciones registradas
             </h3>
             <p className="text-sm text-bodydark2">
-              La asociacion se hace evaluacion por evaluacion y se apoya en la
-              validacion del backend para impedir asociar rubricas no publicadas.
+              Desde cada fila puedes asociar una rúbrica o entrar a calificar.
             </p>
           </div>
 
@@ -414,6 +413,7 @@ const EvaluationRubricAssociation = () => {
                 const selectedRubric = selectedRubricId
                   ? rubricsById.get(selectedRubricId)
                   : null;
+                const canGrade = Boolean(evaluation.id && evaluation.rubric_id);
 
                 return (
                   <div
@@ -465,7 +465,7 @@ const EvaluationRubricAssociation = () => {
                         Rubrica actual
                       </p>
                       <p className="mt-1 text-sm font-medium text-black dark:text-white">
-                        {currentRubric ? currentRubric.title : 'Sin rubrica asociada'}
+                        {currentRubric ? currentRubric.title : 'Sin rúbrica asociada'}
                       </p>
                       {currentRubric && (
                         <p className="mt-1 text-xs text-bodydark2">
@@ -474,10 +474,36 @@ const EvaluationRubricAssociation = () => {
                       )}
                     </div>
 
+                    <div className="mb-4 flex flex-wrap gap-2">
+                      {evaluation.rubric_id ? (
+                        <span className="rounded bg-success/10 px-3 py-1 text-xs font-medium text-success">
+                          Con rúbrica asociada
+                        </span>
+                      ) : (
+                        <span className="rounded bg-warning/10 px-3 py-1 text-xs font-medium text-warning">
+                          Sin rúbrica asociada
+                        </span>
+                      )}
+                    </div>
+
                     <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
-                      <div>
+                      <div className="rounded border border-stroke bg-white p-4 dark:border-strokedark dark:bg-boxdark">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-wide text-bodydark2">
+                              Acciones
+                            </p>
+                            <p className="text-sm text-bodydark2">
+                              Asocia una rúbrica o entra a calificar desde esta misma evaluación.
+                            </p>
+                          </div>
+                          <span className="rounded bg-primary/10 px-3 py-1 text-xs font-medium text-primary">
+                            {evaluation.rubric_id ? 'Lista para calificar' : 'Falta rúbrica'}
+                          </span>
+                        </div>
+
                         <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                          Rubrica publicada a asociar
+                          Rúbrica publicada a asociar
                         </label>
                         <select
                           value={selectedRubricId}
@@ -489,7 +515,7 @@ const EvaluationRubricAssociation = () => {
                           }
                           className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
                         >
-                          <option value="">Selecciona una rubrica publicada...</option>
+                          <option value="">Selecciona una rúbrica publicada...</option>
                           {selectableRubrics.map((rubric) => (
                             <option key={rubric.id} value={rubric.id}>
                               {getRubricLabel(rubric)}
@@ -501,20 +527,31 @@ const EvaluationRubricAssociation = () => {
                             Seleccionada: {getRubricLabel(selectedRubric)}
                           </p>
                         )}
-                      </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleAssociateRubric(evaluation)}
-                        disabled={associatingEvaluationId === evaluation.id}
-                        className="rounded bg-primary px-5 py-3 font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
-                      >
-                        {associatingEvaluationId === evaluation.id
-                          ? 'Asociando...'
-                          : evaluation.rubric_id
-                            ? 'Actualizar rubrica'
-                            : 'Asociar rubrica'}
-                      </button>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => handleAssociateRubric(evaluation)}
+                            disabled={associatingEvaluationId === evaluation.id}
+                            className="rounded bg-primary px-5 py-3 font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
+                          >
+                            {associatingEvaluationId === evaluation.id
+                              ? 'Asociando...'
+                              : evaluation.rubric_id
+                                ? 'Actualizar rúbrica'
+                                : 'Asociar rúbrica'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => navigate(`/evaluation/grades/${evaluation.id}`)}
+                            disabled={!canGrade}
+                            className="rounded border border-success px-5 py-3 font-medium text-success hover:bg-success hover:text-white disabled:cursor-not-allowed disabled:border-stroke disabled:text-bodydark2 disabled:hover:bg-transparent disabled:hover:text-bodydark2"
+                          >
+                            Calificar
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );

@@ -62,6 +62,8 @@ const EnrollmentForm = lazy(() => import('../pages/Academic/Inscripciones/Enroll
 const RubricManager = lazy(() => import('../pages/Evaluation/Rubrics/RubricManager'));
 
 const EvaluationRubricAssociation = lazy(() => import('../pages/Evaluation/Associations/EvaluationRubricAssociation'));
+const FinalGradesPage = lazy(() => import('../pages/FinalGrades/FinalGradesPage'));
+const FinalGradesByGroupPage = lazy(() => import('../pages/FinalGrades/FinalGradesByGroupPage'));
 
 
 const coreRoutes = [
@@ -262,6 +264,26 @@ const coreRoutes = [
     title: 'Asociar Rubrica a Evaluacion',
 
     component: EvaluationRubricAssociation,
+
+  },
+
+  {
+
+    path: '/final-grades',
+
+    title: 'Notas Finales',
+
+    component: FinalGradesPage,
+
+  },
+
+  {
+
+    path: '/final-grades/:groupId',
+
+    title: 'Consolidado de Grupo',
+
+    component: FinalGradesByGroupPage,
 
   },
 

@@ -6,9 +6,16 @@ type Props = {
   onChangeScale: (criterionId: string, scaleId: string | null) => void;
   onChangeComment: (criterionId: string, comment: string) => void;
   showError?: boolean;
+  disabled?: boolean;
 };
 
-const CriterionSelector: React.FC<Props> = ({ criterion, onChangeScale, onChangeComment, showError = false }) => {
+const CriterionSelector: React.FC<Props> = ({
+  criterion,
+  onChangeScale,
+  onChangeComment,
+  showError = false,
+  disabled = false,
+}) => {
   return (
     <div className={`rounded bg-white p-4 dark:bg-boxdark ${showError ? 'border border-danger' : 'border border-stroke'}`}>
       <div className="mb-2 flex items-center justify-between">
@@ -25,6 +32,7 @@ const CriterionSelector: React.FC<Props> = ({ criterion, onChangeScale, onChange
         <select
           value={criterion.selected_scale_id || ''}
           onChange={(e) => onChangeScale(criterion.criterion_id, e.target.value || null)}
+          disabled={disabled}
           className={`w-full rounded bg-transparent px-3 py-2 outline-none focus:border-primary dark:border-strokedark ${showError ? 'border-danger/50' : 'border-stroke'}`}
         >
           <option value="">Selecciona nivel...</option>
@@ -42,6 +50,7 @@ const CriterionSelector: React.FC<Props> = ({ criterion, onChangeScale, onChange
           value={criterion.comment || ''}
           onChange={(e) => onChangeComment(criterion.criterion_id, e.target.value)}
           rows={2}
+          disabled={disabled}
           className="w-full rounded border border-stroke bg-transparent px-3 py-2 outline-none focus:border-primary dark:border-strokedark"
           placeholder="Observaciones por criterio"
         />

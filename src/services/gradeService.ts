@@ -1,10 +1,20 @@
 import { api } from '../interceptors/authInterceptor';
-import type { GradePayload } from '../types/grade';
+import type { GradeApi, GradePayload } from '../types/grade';
 
 type ApiResponse<T> = {
   data?: T;
   message?: string;
   status?: number;
+};
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+const isValidUuid = (value: string) => UUID_REGEX.test(value);
+
+const readList = <T,>(response: any): T[] => {
+  const data = response?.data?.data ?? response?.data ?? response;
+  return Array.isArray(data) ? (data as T[]) : [];
 };
 
 class GradeService {
@@ -30,15 +40,32 @@ class GradeService {
     }
   }
 
-  async getEvaluationGrades(evaluationId: string) {
+  async getEvaluationGrades(evaluationId: string): Promise<GradeApi[]> {
+    if (!isValidUuid(evaluationId)) {
+      return [];
+    }
+
     try {
       const response = await api.get<ApiResponse<any>>(`/grades?evaluation_id=${evaluationId}`);
-      return response.data?.data || response.data || [];
+      return readList<GradeApi>(response);
     } catch (error: any) {
       console.error('Error fetching grades for evaluation:', error.response?.data || error.message);
       // Devolver array vacío para no romper la UI si backend no expone este endpoint
       return [];
     }
+  }
+
+  async getGradeByEnrollmentAndEvaluation(
+    evaluationId: string,
+    enrollmentId: string,
+  ): Promise<GradeApi | null> {
+    const grades = await this.getEvaluationGrades(evaluationId);
+    return grades.find((grade) => grade.enrollment_id === enrollmentId) || null;
+  }
+
+  async updateGrade(payload: GradePayload) {
+    // El backend confirmado usa POST /grades como punto de persistencia única.
+    return this.saveDraft({ ...payload, status: payload.status });
   }
 }
 
