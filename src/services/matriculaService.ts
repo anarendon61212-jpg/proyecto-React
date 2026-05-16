@@ -9,6 +9,7 @@ export type CreateMatriculaPayload = {
 
 export type SearchStudentApi = {
   id: string;
+  user_id?: string;
   nombre?: string;
   apellido?: string;
   cedula?: string;
