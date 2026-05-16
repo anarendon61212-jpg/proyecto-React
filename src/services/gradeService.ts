@@ -21,7 +21,7 @@ class GradeService {
   async saveDraft(payload: GradePayload) {
     try {
       const body = { ...payload, status: 'DRAFT' };
-      const response = await api.post<ApiResponse<any>>('/grades', body);
+      const response = await api.post<ApiResponse<any>>('/evaluation/grades', body);
       return response.data?.data || response.data;
     } catch (error: any) {
       console.error('Error saving draft grade:', error.response?.data || error.message);
@@ -32,7 +32,7 @@ class GradeService {
   async submitGrade(payload: GradePayload) {
     try {
       const body = { ...payload, status: 'SENT' };
-      const response = await api.post<ApiResponse<any>>('/grades', body);
+      const response = await api.post<ApiResponse<any>>('/evaluation/grades', body);
       return response.data?.data || response.data;
     } catch (error: any) {
       console.error('Error submitting grade:', error.response?.data || error.message);
@@ -46,7 +46,9 @@ class GradeService {
     }
 
     try {
-      const response = await api.get<ApiResponse<any>>(`/grades?evaluation_id=${evaluationId}`);
+      const response = await api.get<ApiResponse<any>>(
+        `/evaluation/grades?evaluation_id=${evaluationId}`,
+      );
       return readList<GradeApi>(response);
     } catch (error: any) {
       console.error('Error fetching grades for evaluation:', error.response?.data || error.message);
@@ -64,7 +66,7 @@ class GradeService {
   }
 
   async updateGrade(payload: GradePayload) {
-    // El backend confirmado usa POST /grades como punto de persistencia única.
+    // El backend confirmado usa POST /evaluation/grades como punto de persistencia única.
     return this.saveDraft({ ...payload, status: payload.status });
   }
 }

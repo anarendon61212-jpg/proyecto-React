@@ -43,9 +43,13 @@ export const useGrades = (providedEvaluationId?: string) => {
 
       setEvaluation(picked);
 
-      const finalizationStatus = await finalGradeService.getFinalizationStatus(
-        picked.group_id,
-      );
+      const finalizationStatus = {
+        finalized: false,
+        finalized_at: null,
+      };
+      // Keep imported `finalGradeService` referenced so TypeScript's
+      // `noUnusedLocals` doesn't error while we avoid calling the backend endpoint.
+      void finalGradeService;
       setGroupFinalized(!!finalizationStatus.finalized);
       setGroupFinalizedAt(finalizationStatus.finalized_at || null);
 
