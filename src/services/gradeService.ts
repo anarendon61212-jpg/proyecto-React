@@ -7,10 +7,11 @@ type ApiResponse<T> = {
   status?: number;
 };
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const isValidUuid = (value: string) => UUID_REGEX.test(value);
+const isValidId = (value: any) => {
+  if (value === undefined || value === null) return false;
+  const s = String(value).trim();
+  return s.length > 0;
+};
 
 const readList = <T,>(response: any): T[] => {
   const data = response?.data?.data ?? response?.data ?? response;
@@ -41,13 +42,13 @@ class GradeService {
   }
 
   async getEvaluationGrades(evaluationId: string): Promise<GradeApi[]> {
-    if (!isValidUuid(evaluationId)) {
+    if (!isValidId(evaluationId)) {
       return [];
     }
 
     try {
       const response = await api.get<ApiResponse<any>>(
-        `/evaluation/grades?evaluation_id=${evaluationId}`,
+        `/grades?evaluation_id=${evaluationId}`,
       );
       return readList<GradeApi>(response);
     } catch (error: any) {

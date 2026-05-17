@@ -4,14 +4,10 @@ import {
   type FinalizeGroupResponse,
   type GradeForFinalGrade,
 } from '../services/finalGradeService';
-import { inscripcionService } from '../services/inscripcionService';
 import { matriculaService } from '../services/matriculaService';
 import { grupoService } from '../services/grupoService';
 import { asignaturaService } from '../services/asignaturaService';
 import { semesterService } from '../services/semesterService';
-
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export interface StudentFinalGrade {
   enrollment_id: string;
@@ -86,13 +82,6 @@ export const useFinalGrades = (groupId?: string) => {
       return;
     }
 
-    if (!UUID_REGEX.test(groupId)) {
-      setFinalGradesState(null);
-      setError('UUID de grupo invalido');
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError(null);
 
@@ -104,11 +93,10 @@ export const useFinalGrades = (groupId?: string) => {
       const subjectId = group?.asignatura_id || group?.subject_id;
       const semesterId = group?.semestre_id || group?.semester_id;
 
-      const [evaluations, allEnrollments, studentsResponse, statusResponse] = await Promise.all([
+      const [evaluations, allEnrollments, studentsResponse] = await Promise.all([
         finalGradeService.getGroupEvaluations(groupId),
-        inscripcionService.getEnrollments(),
+        finalGradeService.getEnrollmentsByGroupId(groupId),
         matriculaService.searchEstudiantes(''),
-        finalGradeService.getFinalizationStatus(groupId),
       ]);
 
       const [subject, semester] = await Promise.all([
@@ -127,7 +115,7 @@ export const useFinalGrades = (groupId?: string) => {
           ? semester.is_active
           : Boolean(group?.semester_status ?? group?.semestre_activo ?? false);
 
-      const enrollments = (allEnrollments || []).filter((en: any) => en.group_id === groupId);
+      const enrollments = (allEnrollments || []);
       const activeEnrollments = enrollments.filter(isEnrollmentActive);
 
       const studentsList = (studentsResponse?.data || studentsResponse) || [];
@@ -203,11 +191,7 @@ export const useFinalGrades = (groupId?: string) => {
 
         const finalGrade = finalGradeService.calculateFinalGrade(evaluationGrades);
 
-        const status: StudentFinalGrade['status'] = statusResponse.finalized
-          ? 'Consolidado'
-          : isComplete
-            ? 'Completo'
-            : 'Pendiente';
+        const status: StudentFinalGrade['status'] = isComplete ? 'Completo' : 'Pendiente';
 
         return {
           enrollment_id: enrollment.id,
@@ -248,7 +232,10 @@ export const useFinalGrades = (groupId?: string) => {
         validationErrors.push('El grupo no tiene inscripciones activas.');
       }
 
-      const canFinalize = !statusResponse.finalized && validationErrors.length === 0;
+      const canFinalize =
+        Boolean(semesterActive) &&
+        evaluations.length > 0 &&
+        activeEnrollments.length > 0;
 
       setFinalGradesState({
         groupId,
@@ -256,9 +243,9 @@ export const useFinalGrades = (groupId?: string) => {
         subjectName,
         semesterName,
         semesterActive,
-        isFinalized: !!statusResponse.finalized,
-        finalizedAt: statusResponse.finalized_at || null,
-        locked: !!statusResponse.locked,
+        isFinalized: false,
+        finalizedAt: null,
+        locked: false,
         evaluations: evaluations.map((evaluation) => ({
           id: evaluation.id,
           name: evaluation.name,

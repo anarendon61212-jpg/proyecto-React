@@ -204,7 +204,7 @@ const FinalGradesByGroupPage: React.FC = () => {
       {/* Confirmation Modal */}
       <ConfirmFinalGradesModal
         isOpen={showConfirmModal}
-        totalStudents={finalGradesState.students.length}
+        totalStudents={completeEnrollmentIds.length}
         semesterName={finalGradesState.semesterName}
         onConfirm={handleRecordFinalGrades}
         onCancel={() => setShowConfirmModal(false)}

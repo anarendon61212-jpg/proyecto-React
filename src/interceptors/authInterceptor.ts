@@ -13,8 +13,23 @@ export class AuthInterceptor {
     constructor() {
         this.storage = new LocalStorageProvider();
 
+        const rawBase = import.meta.env.VITE_API_URL || '';
+        let normalizedBase = '';
+        if (!rawBase) {
+            normalizedBase = '/api';
+        } else {
+            // Ensure base URL ends with '/api' so service paths can be relative
+            if (rawBase.endsWith('/api')) {
+                normalizedBase = rawBase.replace(/\/$/, '');
+            } else if (rawBase.endsWith('/')) {
+                normalizedBase = `${rawBase.replace(/\/$/, '')}/api`;
+            } else {
+                normalizedBase = `${rawBase}/api`;
+            }
+        }
+
         this.api = axios.create({
-            baseURL: import.meta.env.VITE_API_URL || "/api",
+            baseURL: normalizedBase,
             headers: { "Content-Type": "application/json" },
         });
 

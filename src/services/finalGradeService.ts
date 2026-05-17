@@ -1,4 +1,5 @@
 import { api } from '../interceptors/authInterceptor';
+import { gradeService } from './gradeService';
 
 export interface FinalGradeResponse {
   id: string;
@@ -59,10 +60,11 @@ type ApiResponse<T> = {
   status?: number;
 };
 
-const UUID_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-const isValidUuid = (value: string) => UUID_REGEX.test(value);
+const isValidId = (value: any) => {
+  if (value === undefined || value === null) return false;
+  const s = String(value).trim();
+  return s.length > 0;
+};
 
 const readList = <T,>(response: any): T[] => {
   const data = response?.data?.data ?? response?.data ?? response;
@@ -84,7 +86,7 @@ const readBlob = (response: any): Blob => {
 
 class FinalGradeService {
   async getGroupEvaluations(groupId: string): Promise<EvaluationForFinalGrade[]> {
-    if (!isValidUuid(groupId)) return [];
+    if (!isValidId(groupId)) return [];
     const response = await api.get<ApiResponse<EvaluationForFinalGrade[]>>(
       `/evaluation/evaluations?group_id=${groupId}`,
     );
@@ -92,11 +94,11 @@ class FinalGradeService {
   }
 
   async getEvaluationGrades(evaluationId: string): Promise<GradeForFinalGrade[]> {
-    if (!isValidUuid(evaluationId)) return [];
-    const response = await api.get<ApiResponse<GradeForFinalGrade[]>>(
-      `/grades?evaluation_id=${evaluationId}`,
-    );
-    return readList<GradeForFinalGrade>(response);
+    if (!isValidId(evaluationId)) return [];
+    // Reusar la lógica de consulta de notas centralizada en gradeService
+    const grades = await gradeService.getEvaluationGrades(evaluationId);
+    // Mapear al tipo local si es necesario
+    return (grades as any) as GradeForFinalGrade[];
   }
 
   async getEnrollmentsByGroupId(groupId: string): Promise<any[]> {
@@ -121,28 +123,49 @@ class FinalGradeService {
   }
 
   async getFinalizationStatus(groupId: string): Promise<FinalizationStatusResponse> {
-    const response = await api.get<ApiResponse<FinalizationStatusResponse>>(
-      `/grades/finalize/group/${groupId}/status`,
-    );
+    try {
+      const response = await api.get<ApiResponse<FinalizationStatusResponse>>(
+        `/grades/finalize/group/${groupId}/status`,
+      );
 
-    const status = readEntity<FinalizationStatusResponse>(response);
-    if (!status) {
-      throw new Error('No se pudo obtener el estado de consolidacion del grupo.');
+      const status = readEntity<FinalizationStatusResponse>(response);
+      if (!status) {
+        throw new Error('No se pudo obtener el estado de consolidacion del grupo.');
+      }
+
+      return status;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return {
+          group_id: groupId,
+          finalized: false,
+          finalized_at: null,
+          locked: false,
+        };
+      }
+
+      throw error;
     }
-
-    return status;
   }
 
   async getFinalizationOverview(): Promise<FinalizationListItem[]> {
-    const response = await api.get<ApiResponse<FinalizationListItem[]>>(
-      '/grades/finalize/groups',
-    );
-    return readList<FinalizationListItem>(response);
+    try {
+      const response = await api.get<ApiResponse<FinalizationListItem[]>>(
+        '/grades/finalize/groups',
+      );
+      return readList<FinalizationListItem>(response);
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        return [];
+      }
+
+      throw error;
+    }
   }
 
   async finalizeGroup(groupId: string): Promise<FinalizeGroupResponse> {
-    if (!isValidUuid(groupId)) {
-      throw new Error('UUID de grupo invalido');
+    if (!isValidId(groupId)) {
+      throw new Error('Identificador de grupo inválido');
     }
 
     const response = await api.post<ApiResponse<FinalizeGroupResponse>>(

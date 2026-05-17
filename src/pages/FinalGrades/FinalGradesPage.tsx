@@ -4,7 +4,6 @@ import toast from 'react-hot-toast';
 import { grupoService } from '../../services/grupoService';
 import { asignaturaService } from '../../services/asignaturaService';
 import { semesterService } from '../../services/semesterService';
-import { finalGradeService } from '../../services/finalGradeService';
 import Loader from '../../common/Loader';
 
 interface Group {
@@ -27,6 +26,9 @@ type GroupView = {
   status: 'Pendiente' | 'Consolidado';
 };
 
+const safeText = (value: unknown, fallback = '') =>
+  typeof value === 'string' ? value : value === null || value === undefined ? fallback : String(value);
+
 const FinalGradesPage: React.FC = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
@@ -43,11 +45,10 @@ const FinalGradesPage: React.FC = () => {
     setError(null);
 
     try {
-      const [groupsResponse, subjects, semesters, overview] = await Promise.all([
+      const [groupsResponse, subjects, semesters] = await Promise.all([
         grupoService.getGrupos(),
         asignaturaService.getAsignaturas(),
         semesterService.getSemesters(),
-        finalGradeService.getFinalizationOverview(),
       ]);
 
       const groupsData = groupsResponse?.data?.data || groupsResponse?.data || [];
@@ -58,22 +59,19 @@ const FinalGradesPage: React.FC = () => {
 
       const subjectById = new Map<string, any>((subjects || []).map((subject: any) => [subject.id, subject]));
       const semesterById = new Map<string, any>((semesters || []).map((semester: any) => [semester.id, semester]));
-      const statusByGroup = new Map<string, any>((overview || []).map((item) => [item.group_id, item]));
-
       const normalized: GroupView[] = (groupsData as Group[]).map((group) => {
         const subjectId = group.asignatura_id || group.subject_id;
         const semesterId = group.semestre_id || group.semester_id;
         const subject = subjectId ? subjectById.get(subjectId) : null;
         const semester = semesterId ? semesterById.get(semesterId) : null;
-        const status = statusByGroup.get(group.id);
 
         return {
           id: group.id,
-          nombre: group.nombre,
-          codigo_grupo: group.codigo_grupo,
+          nombre: safeText(group.nombre, safeText((group as any).name, 'Grupo sin nombre')),
+          codigo_grupo: safeText(group.codigo_grupo, safeText((group as any).group_code, '')),
           subjectName: subject?.nombre || subject?.name || 'Sin asignatura',
           semesterName: semester?.name || semester?.code || 'Sin semestre',
-          status: status?.finalized ? 'Consolidado' : 'Pendiente',
+          status: 'Pendiente',
         };
       });
 
@@ -90,11 +88,12 @@ const FinalGradesPage: React.FC = () => {
     }
   };
 
-  const filteredGroups = groups.filter(
-    (group) =>
-      group.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.codigo_grupo.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearch = searchTerm.toLowerCase();
+  const filteredGroups = groups.filter((group) => {
+    const groupName = safeText(group.nombre).toLowerCase();
+    const groupCode = safeText(group.codigo_grupo).toLowerCase();
+    return groupName.includes(normalizedSearch) || groupCode.includes(normalizedSearch);
+  });
 
   if (loading) {
     return <Loader />;
