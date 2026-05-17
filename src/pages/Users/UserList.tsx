@@ -2,15 +2,25 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { User } from "../../models/User";
 import { userService } from "../../services/userService";
+import { careerService } from "../../services/careerService";
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
+
+type CareerOption = {
+    id: string;
+    name?: string;
+    nombre?: string;
+    code?: string;
+    codigo?: string;
+};
 
 const UserList: React.FC = () => {
     const navigate = useNavigate();
 
     // Estado para la lista de usuarios
     const [users, setUsers] = useState<User[]>([]);
+    const [careers, setCareers] = useState<CareerOption[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
@@ -18,26 +28,41 @@ const UserList: React.FC = () => {
     const [filters, setFilters] = useState({
         role: "",
         is_active: "",
+        career_id: "",
     });
 
     // Cargar usuarios al montar el componente
     useEffect(() => {
         loadUsers();
+        loadCareers();
     }, []);
+
+    const loadCareers = async () => {
+        try {
+            const fetchedCareers = await careerService.getCareers();
+            setCareers((fetchedCareers as unknown as CareerOption[]) || []);
+        } catch {
+            setCareers([]);
+        }
+    };
 
     /**
      * Obtiene la lista de usuarios
      */
-    const loadUsers = async () => {
+    const loadUsers = async (overrideFilters?: typeof filters) => {
         setLoading(true);
         setError(null);
+        const activeFilters = overrideFilters || filters;
         try {
             // Si hay filtros activos, usar searchUsers
-            if (filters.role || filters.is_active !== "") {
+            if (activeFilters.role || activeFilters.is_active !== "" || activeFilters.career_id) {
                 const searchFilters: any = {};
-                if (filters.role) searchFilters.role = filters.role;
-                if (filters.is_active !== "") {
-                    searchFilters.is_active = filters.is_active === "true";
+                if (activeFilters.role) searchFilters.role = activeFilters.role;
+                if (activeFilters.is_active !== "") {
+                    searchFilters.is_active = activeFilters.is_active === "true";
+                }
+                if (activeFilters.career_id) {
+                    searchFilters.career_id = activeFilters.career_id;
                 }
 
                 const searchedUsers = await userService.searchUsers(searchFilters);
@@ -75,9 +100,10 @@ const UserList: React.FC = () => {
      * Limpia los filtros
      */
     const clearFilters = () => {
-        setFilters({ role: "", is_active: "" });
+        const emptyFilters = { role: "", is_active: "", career_id: "" };
+        setFilters(emptyFilters);
         setUsers([]);
-        loadUsers();
+        loadUsers(emptyFilters);
     };
 
     /**
@@ -95,20 +121,30 @@ const UserList: React.FC = () => {
      * Desactiva un usuario
      */
     const handleDeactivate = async (user: User) => {
+        if (!user.id) {
+            toast.error("ID de usuario inválido");
+            return;
+        }
+
         const result = await Swal.fire({
             title: "¿Desactivar usuario?",
             text: `¿Estás seguro de que deseas desactivar a ${user.profile?.first_name || "este usuario"}?`,
             icon: "warning",
+            showConfirmButton: true,
             showCancelButton: true,
-            confirmButtonColor: "#3085d6",
-            cancelButtonColor: "#d33",
             confirmButtonText: "Sí, desactivar",
             cancelButtonText: "Cancelar",
+            buttonsStyling: false,
+            customClass: {
+                actions: "flex gap-3",
+                confirmButton: "rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90",
+                cancelButton: "rounded-md border border-stroke px-4 py-2 text-black hover:bg-gray-100 dark:text-white",
+            },
         });
 
         if (result.isConfirmed) {
             try {
-                await userService.deactivateUser(user.id || 0);
+                await userService.deactivateUser(user.id);
                 toast.success("Usuario desactivado correctamente");
                 loadUsers();
             } catch (err: any) {
@@ -177,7 +213,7 @@ const UserList: React.FC = () => {
                     <h3 className="mb-4 text-sm font-medium text-black dark:text-white">
                         Filtros
                     </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* Filtro por Rol */}
                         <div>
                             <label className="mb-2.5 block text-black dark:text-white">
@@ -208,6 +244,28 @@ const UserList: React.FC = () => {
                                 <option value="">Todos los estados</option>
                                 <option value="true">Activos</option>
                                 <option value="false">Inactivos</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label className="mb-2.5 block text-black dark:text-white">
+                                Carrera
+                            </label>
+                            <select
+                                value={filters.career_id}
+                                onChange={(e) => handleFilterChange("career_id", e.target.value)}
+                                className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                            >
+                                <option value="">Todas las carreras</option>
+                                {careers.map((career) => {
+                                    const name = career.name || career.nombre || "Sin nombre";
+                                    const code = career.code || career.codigo;
+                                    return (
+                                        <option key={career.id} value={career.id}>
+                                            {code ? `${name} (${code})` : name}
+                                        </option>
+                                    );
+                                })}
                             </select>
                         </div>
                     </div>

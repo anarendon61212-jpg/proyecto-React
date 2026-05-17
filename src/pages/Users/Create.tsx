@@ -1,6 +1,6 @@
 import React from 'react';
 import { User } from '../../models/User';
-import UserFormValidator from '../../components/users/UserFormValidator';
+import UserFormValidator, { type UserFormValues } from '../../components/users/UserFormValidator';
 import Swal from 'sweetalert2';
 import { userService } from "../../services/userService";
 import Breadcrumb from '../../components/Breadcrumb';
@@ -9,9 +9,9 @@ import { useNavigate } from "react-router-dom";
 const CreateUserPage = () => {
     const navigate = useNavigate();
 
-    const handleCreateUser = async (user: User) => {
+    const handleCreateUser = async (user: UserFormValues) => {
         try {
-            const createdUser = await userService.createUser(user);
+            const createdUser = await userService.createUser(user as Partial<User>);
             if (createdUser) {
                 Swal.fire({
                     title: "Completado",

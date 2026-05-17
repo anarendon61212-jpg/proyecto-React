@@ -3,6 +3,71 @@ import { User } from "../models/User";
 
 const API_URL = "/users";
 
+type UserProfilePayload = {
+    first_name: string;
+    last_name: string;
+    identification: string;
+    phone?: string;
+    specialty?: string;
+};
+
+type UserUpsertPayload = {
+    email?: string;
+    code?: string;
+    role?: User["role"];
+    is_active?: boolean;
+    password?: string;
+    first_name?: string;
+    last_name?: string;
+    identification?: string;
+    phone?: string;
+    specialty?: string;
+};
+
+const toBoolean = (value: unknown): boolean | undefined => {
+    if (typeof value === "boolean") return value;
+    if (typeof value === "string") {
+        if (value.toLowerCase() === "true") return true;
+        if (value.toLowerCase() === "false") return false;
+    }
+    return undefined;
+};
+
+const toTrimmed = (value: unknown): string | undefined => {
+    if (typeof value !== "string") return undefined;
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : undefined;
+};
+
+const buildUserPayload = (
+    user: Partial<User>,
+    options?: { includePassword?: boolean },
+): UserUpsertPayload => {
+    const includePassword = options?.includePassword ?? false;
+    const profile = user.profile || {};
+
+    const payload: UserUpsertPayload = {
+        email: toTrimmed(user.email),
+        code: toTrimmed(user.code),
+        role: user.role,
+        is_active: toBoolean(user.is_active),
+        first_name: toTrimmed(profile.first_name),
+        last_name: toTrimmed(profile.last_name),
+        identification: toTrimmed(profile.identification),
+        phone: toTrimmed(profile.phone),
+        specialty: toTrimmed(profile.specialty),
+    };
+
+    if (includePassword) {
+        const password = toTrimmed(user.password);
+        if (password) {
+            payload.password = password;
+        }
+    }
+
+    return payload;
+};
+
 interface ApiResponse<T> {
     message?: string;
     data?: T;
@@ -33,6 +98,7 @@ class UserService {
     async searchUsers(filters: {
         role?: string;
         is_active?: boolean;
+        career_id?: string;
         code?: string;
         email?: string;
     }): Promise<User[]> {
@@ -40,6 +106,7 @@ class UserService {
             const queryParams = new URLSearchParams();
             if (filters.role) queryParams.append("role", filters.role);
             if (filters.is_active !== undefined) queryParams.append("is_active", String(filters.is_active));
+            if (filters.career_id) queryParams.append("career_id", filters.career_id);
             if (filters.code) queryParams.append("code", filters.code);
             if (filters.email) queryParams.append("email", filters.email);
 
@@ -73,9 +140,10 @@ class UserService {
      * Crea un nuevo usuario
      * POST /users
      */
-    async createUser(user: Omit<User, "id">): Promise<User | null> {
+    async createUser(user: Partial<User>): Promise<User | null> {
         try {
-            const response = await api.post<ApiResponse<User>>(API_URL, user);
+            const payload = buildUserPayload(user, { includePassword: true });
+            const response = await api.post<ApiResponse<User>>(API_URL, payload);
             const data = response.data?.data || response.data;
             return data || null;
         } catch (error: any) {
@@ -90,7 +158,8 @@ class UserService {
      */
     async updateUser(id: string, user: Partial<User>): Promise<User | null> {
         try {
-            const response = await api.put<ApiResponse<User>>(`${API_URL}/${id}`, user);
+            const payload = buildUserPayload(user);
+            const response = await api.put<ApiResponse<User>>(`${API_URL}/${id}`, payload);
             const data = response.data?.data || response.data;
             return data || null;
         } catch (error: any) {
@@ -111,6 +180,15 @@ class UserService {
             const data = response.data?.data || response.data;
             return data || null;
         } catch (error: any) {
+            const status = error?.response?.status;
+            if (status === 404 || status === 405) {
+                const fallbackResponse = await api.put<ApiResponse<User>>(`${API_URL}/${id}`, {
+                    is_active: false,
+                });
+                const fallbackData = fallbackResponse.data?.data || fallbackResponse.data;
+                return fallbackData || null;
+            }
+
             console.error("Error al desactivar usuario:", error.response?.data || error.message);
             throw error;
         }

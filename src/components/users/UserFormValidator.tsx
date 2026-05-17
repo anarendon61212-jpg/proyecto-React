@@ -2,19 +2,33 @@ import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { User } from "../../models/User";
 
+export type UserFormValues = {
+    email: string;
+    code: string;
+    role: User["role"];
+    is_active: boolean;
+    password?: string;
+    profile: {
+        first_name: string;
+        last_name: string;
+        identification: string;
+        phone?: string;
+        specialty?: string;
+    };
+};
+
 interface MyFormProps {
     mode: number; // 1 (crear) o 2 (actualizar)
-    handleAction: (values: User) => void;
+    handleAction: (values: UserFormValues) => void;
     user?: User | null;
 }
 
 const UserFormValidator: React.FC<MyFormProps> = ({ mode, handleAction, user }) => {
-    const initialValues: any = user
+    const initialValues: UserFormValues = user
         ? {
-            id: user.id || "",
             email: user.email || "",
             code: user.code || "",
-            role: user.role || "STUDENT",
+            role: (user.role || "STUDENT") as User["role"],
             is_active: user.is_active !== undefined ? user.is_active : true,
             profile: {
                 first_name: user.profile?.first_name || "",
@@ -25,7 +39,6 @@ const UserFormValidator: React.FC<MyFormProps> = ({ mode, handleAction, user }) 
             },
         }
         : {
-            id: "",
             email: "",
             code: "",
             role: "STUDENT",
@@ -43,6 +56,7 @@ const UserFormValidator: React.FC<MyFormProps> = ({ mode, handleAction, user }) 
     return (
         <Formik
             initialValues={initialValues}
+            enableReinitialize
             validationSchema={Yup.object({
                 email: Yup.string()
                     .email("Email inválido")
@@ -54,12 +68,40 @@ const UserFormValidator: React.FC<MyFormProps> = ({ mode, handleAction, user }) 
                 password: mode === 1 
                     ? Yup.string().required("La contraseña es obligatoria")
                     : Yup.string().optional(),
+                profile: Yup.object({
+                    first_name: Yup.string().required("El nombre es obligatorio"),
+                    last_name: Yup.string().required("El apellido es obligatorio"),
+                    identification: Yup.string().required("La identificación es obligatoria"),
+                    phone: Yup.string().optional(),
+                    specialty: Yup.string().optional(),
+                }),
             })}
+            validate={(values) => {
+                const errors: any = {};
+
+                if (values.role === "TEACHER") {
+                    if (!values.profile?.phone?.trim()) {
+                        errors.profile = {
+                            ...(errors.profile || {}),
+                            phone: "El teléfono es obligatorio",
+                        };
+                    }
+
+                    if (!values.profile?.specialty?.trim()) {
+                        errors.profile = {
+                            ...(errors.profile || {}),
+                            specialty: "La especialidad es obligatoria",
+                        };
+                    }
+                }
+
+                return errors;
+            }}
             onSubmit={(values) => {
-                handleAction(values as User);
+                handleAction(values);
             }}
         >
-            {({ handleSubmit, values }) => (
+            {({ handleSubmit, values, setFieldValue }) => (
                 <Form
                     onSubmit={handleSubmit}
                     className="rounded-sm border border-stroke bg-white px-7.5 py-6 shadow-default dark:border-strokedark dark:bg-boxdark"
@@ -143,10 +185,14 @@ const UserFormValidator: React.FC<MyFormProps> = ({ mode, handleAction, user }) 
                             <Field
                                 as="select"
                                 name="is_active"
+                                value={String(values.is_active)}
+                                onChange={(event: React.ChangeEvent<HTMLSelectElement>) => {
+                                    setFieldValue("is_active", event.target.value === "true");
+                                }}
                                 className="w-full rounded border-[1.5px] border-stroke bg-transparent px-5 py-3 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                             >
-                                <option value={true}>Activo</option>
-                                <option value={false}>Inactivo</option>
+                                <option value="true">Activo</option>
+                                <option value="false">Inactivo</option>
                             </Field>
                         </div>
                     </div>

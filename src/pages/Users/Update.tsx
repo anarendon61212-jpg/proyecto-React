@@ -6,7 +6,7 @@ import Swal from "sweetalert2";
 
 import { User } from "../../models/User";
 import Breadcrumb from "../../components/Breadcrumb";
-import UserFormValidator from "../../components/users/UserFormValidator";
+import UserFormValidator, { type UserFormValues } from "../../components/users/UserFormValidator";
 
 const UpdateUserPage = () => {
     const { id } = useParams();
@@ -24,12 +24,19 @@ const UpdateUserPage = () => {
         fetchUser();
     }, [id]);
 
-    const handleUpdateUser = async (theUser: User) => {
+    const handleUpdateUser = async (theUser: UserFormValues) => {
         try {
-            const updatedUser = await userService.updateUser(user?.id || "", {
-                ...user,
-                ...theUser,
-            });
+            if (!id) {
+                Swal.fire({
+                    title: "Error",
+                    text: "ID de usuario inválido",
+                    icon: "error",
+                    timer: 3000,
+                });
+                return;
+            }
+
+            const updatedUser = await userService.updateUser(id, theUser as Partial<User>);
 
             if (updatedUser) {
                 Swal.fire({
