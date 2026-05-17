@@ -34,24 +34,34 @@ const SemesterList: React.FC = () => {
         });
     }, [semesters, statusFilter]);
 
-    const handleCloseSemester = async (semester: Semester) => {
+    const handleToggleSemester = async (semester: Semester) => {
+        const isOpen = semester.is_active;
+
         const result = await Swal.fire({
-            title: "¿Cerrar semestre?",
-            text: `Se cerrará ${semester.name}`,
+            title: isOpen ? "¿Cerrar semestre?" : "¿Abrir semestre?",
+            text: isOpen
+                ? `Se cerrará ${semester.name}`
+                : `Se abrirá ${semester.name}`,
             icon: "warning",
             showCancelButton: true,
-            confirmButtonText: "Sí, cerrar",
+            confirmButtonText: isOpen ? "Sí, cerrar" : "Sí, abrir",
             cancelButtonText: "Cancelar",
         });
 
         if (!result.isConfirmed) return;
 
         try {
-            await semesterService.closeSemester(semester.id);
-            toast.success("Semestre cerrado correctamente");
+            if (isOpen) {
+                await semesterService.closeSemester(semester.id);
+                toast.success("Semestre cerrado correctamente");
+            } else {
+                await semesterService.updateSemester(semester.id, { is_active: true });
+                toast.success("Semestre abierto correctamente");
+            }
+
             loadData();
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "No fue posible cerrar el semestre");
+            toast.error(error.response?.data?.message || "No fue posible actualizar el semestre");
         }
     };
 
@@ -130,10 +140,14 @@ const SemesterList: React.FC = () => {
                                                 Editar
                                             </button>
                                             <button
-                                                onClick={() => handleCloseSemester(semester)}
-                                                className="rounded-md border border-meta-1 px-3 py-2 text-meta-1 hover:bg-meta-1 hover:text-white"
+                                                onClick={() => handleToggleSemester(semester)}
+                                                className={`rounded-md px-3 py-2 font-medium text-white transition-colors ${
+                                                    semester.is_active
+                                                        ? "border border-meta-1 bg-meta-1 hover:bg-meta-1/90"
+                                                        : "border border-success bg-success hover:bg-success/90 dark:bg-success dark:hover:bg-success/80"
+                                                }`}
                                             >
-                                                Cerrar semestre
+                                                {semester.is_active ? "Cerrar semestre" : "Abrir semestre"}
                                             </button>
                                         </div>
                                     </td>
