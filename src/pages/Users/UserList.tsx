@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { User } from "../../models/User";
 import { userService } from "../../services/userService";
 import { careerService } from "../../services/careerService";
+import { matriculaService, type RegistrationApi, type SearchStudentApi } from "../../services/matriculaService";
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
@@ -13,6 +14,15 @@ type CareerOption = {
     nombre?: string;
     code?: string;
     codigo?: string;
+};
+
+const getStudentIdentification = (student: SearchStudentApi): string => {
+    return (
+        student.identification ||
+        student.cedula ||
+        student.profile?.identification ||
+        ""
+    ).trim();
 };
 
 const UserList: React.FC = () => {
@@ -54,23 +64,57 @@ const UserList: React.FC = () => {
         setError(null);
         const activeFilters = overrideFilters || filters;
         try {
-            // Si hay filtros activos, usar searchUsers
-            if (activeFilters.role || activeFilters.is_active !== "" || activeFilters.career_id) {
+            let baseUsers: User[] = [];
+
+            // Si hay filtros de rol/estado, usar searchUsers
+            if (activeFilters.role || activeFilters.is_active !== "") {
                 const searchFilters: any = {};
                 if (activeFilters.role) searchFilters.role = activeFilters.role;
                 if (activeFilters.is_active !== "") {
                     searchFilters.is_active = activeFilters.is_active === "true";
                 }
-                if (activeFilters.career_id) {
-                    searchFilters.career_id = activeFilters.career_id;
-                }
 
-                const searchedUsers = await userService.searchUsers(searchFilters);
-                setUsers(searchedUsers);
+                baseUsers = await userService.searchUsers(searchFilters);
             } else {
-                // Si no hay filtros, obtener todos los usuarios
-                const allUsers = await userService.getUsers();
-                setUsers(allUsers);
+                baseUsers = await userService.getUsers();
+            }
+
+            // Filtro por carrera_id vía matrículas activas (sin depender de endpoint backend en /users/search)
+            if (activeFilters.career_id) {
+                const [students, registrationsResponse] = await Promise.all([
+                    matriculaService.getStudents(),
+                    matriculaService.getRegistrations(),
+                ]);
+
+                const registrations: RegistrationApi[] =
+                    registrationsResponse?.data?.data || registrationsResponse?.data || [];
+
+                const validStudentIds = new Set(
+                    registrations
+                        .filter(
+                            (registration) =>
+                                registration?.career_id === activeFilters.career_id &&
+                                registration?.is_active !== false,
+                        )
+                        .map((registration) => registration.student_id)
+                        .filter(Boolean) as string[],
+                );
+
+                const validIdentifications = new Set(
+                    (students as SearchStudentApi[])
+                        .filter((student) => student?.id && validStudentIds.has(student.id))
+                        .map((student) => getStudentIdentification(student))
+                        .filter(Boolean),
+                );
+
+                const usersByCareer = baseUsers.filter((user) => {
+                    const identification = (user.profile?.identification || "").trim();
+                    return validIdentifications.has(identification);
+                });
+
+                setUsers(usersByCareer);
+            } else {
+                setUsers(baseUsers);
             }
         } catch (err: any) {
             const errorMessage = err.response?.data?.message || "Error al obtener usuarios";

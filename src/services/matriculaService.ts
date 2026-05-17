@@ -56,6 +56,12 @@ class MatriculaService {
     return api.get("/academic/registrations");
   }
 
+  async getStudents() {
+    const response = await api.get("/academic/students");
+    const students = response.data?.data || response.data || [];
+    return Array.isArray(students) ? students : [];
+  }
+
   async getSemesters() {
     return api.get("/academic/semesters");
   }
@@ -65,8 +71,7 @@ class MatriculaService {
   }
 
   async searchEstudiantes(search: string) {
-    const response = await api.get("/academic/students");
-    const students = response.data?.data || response.data || [];
+    const students = await this.getStudents();
     const term = search.trim().toLowerCase();
 
     if (!Array.isArray(students)) {
