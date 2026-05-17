@@ -4,6 +4,7 @@ import { LocalStorageProvider } from "../storage/LocalStorageProvider";
 import { store } from "../store/store";
 import { setUser } from "../store/userSlice";
 import { api } from "../interceptors/authInterceptor";
+import { extractRoleFromObject } from "../utils/roleUtils";
 
 class SecurityService extends EventTarget {
     private readonly keyToken: string;
@@ -65,7 +66,12 @@ class SecurityService extends EventTarget {
             console.log(" Usuario extraído:", userData);
             console.log(" Token extraído:", token);
 
-            this.user = userData;
+            const normalizedUser = {
+                ...userData,
+                role: extractRoleFromObject(userData) || "STUDENT",
+            };
+
+            this.user = normalizedUser;
 
             this.storage.setItem(this.userKey, JSON.stringify(this.user));
 

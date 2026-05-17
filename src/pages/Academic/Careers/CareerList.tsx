@@ -55,6 +55,27 @@ const CareerList: React.FC = () => {
         }
     };
 
+    const handleUnarchive = async (career: Career) => {
+        const result = await Swal.fire({
+            title: "¿Desarchivar carrera?",
+            text: `Se reactivará ${career.name}`,
+            icon: "question",
+            showCancelButton: true,
+            confirmButtonText: "Sí, desarchivar",
+            cancelButtonText: "Cancelar",
+        });
+
+        if (!result.isConfirmed) return;
+
+        try {
+            await careerService.updateCareer(career.id, { is_active: true });
+            toast.success("Carrera desarchivada correctamente");
+            loadCareers();
+        } catch (error: any) {
+            toast.error(error.response?.data?.message || "No fue posible desarchivar la carrera");
+        }
+    };
+
     return (
         <>
             <Breadcrumb pageName="Carreras" />
@@ -128,10 +149,18 @@ const CareerList: React.FC = () => {
                                                 Editar
                                             </button>
                                             <button
-                                                onClick={() => handleArchive(career)}
-                                                className="rounded-md border border-meta-1 px-3 py-2 text-meta-1 hover:bg-meta-1 hover:text-white"
+                                                onClick={() =>
+                                                    career.is_active
+                                                        ? handleArchive(career)
+                                                        : handleUnarchive(career)
+                                                }
+                                                className={`rounded-md border px-3 py-2 hover:text-white ${
+                                                    career.is_active
+                                                        ? "border-meta-1 text-meta-1 hover:bg-meta-1"
+                                                        : "border-meta-1 text-meta-1 hover:bg-meta-1"
+                                                }`}
                                             >
-                                                Archivar
+                                                {career.is_active ? "Archivar" : "Desarchivar"}
                                             </button>
                                         </div>
                                     </td>

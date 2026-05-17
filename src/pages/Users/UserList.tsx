@@ -7,6 +7,7 @@ import { matriculaService, type RegistrationApi, type SearchStudentApi } from ".
 import Breadcrumb from "../../components/Breadcrumb";
 import Swal from "sweetalert2";
 import toast from "react-hot-toast";
+import { getRoleLabel, normalizeRole } from "../../utils/roleUtils";
 
 type CareerOption = {
     id: string;
@@ -199,18 +200,55 @@ const UserList: React.FC = () => {
     };
 
     /**
+     * Activa un usuario
+     */
+    const handleActivate = async (user: User) => {
+        if (!user.id) {
+            toast.error("ID de usuario inválido");
+            return;
+        }
+
+        const result = await Swal.fire({
+            title: "¿Activar usuario?",
+            text: `¿Deseas activar a ${user.profile?.first_name || "este usuario"}?`,
+            icon: "question",
+            showConfirmButton: true,
+            showCancelButton: true,
+            confirmButtonText: "Sí, activar",
+            cancelButtonText: "Cancelar",
+            buttonsStyling: false,
+            customClass: {
+                actions: "flex gap-3",
+                confirmButton: "rounded-md bg-primary px-4 py-2 text-white hover:bg-opacity-90",
+                cancelButton: "rounded-md border border-stroke px-4 py-2 text-black hover:bg-gray-100 dark:text-white",
+            },
+        });
+
+        if (result.isConfirmed) {
+            try {
+                await userService.updateUser(user.id, { is_active: true });
+                toast.success("Usuario activado correctamente");
+                loadUsers();
+            } catch (err: any) {
+                const errorMessage = err.response?.data?.message || "Error al activar usuario";
+                toast.error(errorMessage);
+            }
+        }
+    };
+
+    /**
      * Obtiene el color del badge según el rol
      */
-    const getRoleBadgeColor = (role?: string): string => {
-        switch (role) {
+    const getRoleBadgeColor = (role: unknown): string => {
+        switch (normalizeRole(role)) {
             case "ADMIN":
-                return "bg-red-500 text-white";
+                return "bg-red-500 text-black dark:text-white";
             case "TEACHER":
-                return "bg-blue-500 text-white";
+                return "bg-blue-500 text-black dark:text-white";
             case "STUDENT":
-                return "bg-green-500 text-white";
+                return "bg-green-500 text-black dark:text-white";
             default:
-                return "bg-gray-500 text-white";
+                return "bg-gray-500 text-black dark:text-white";
         }
     };
 
@@ -370,65 +408,51 @@ const UserList: React.FC = () => {
                                 </tr>
                             </thead>
                             <tbody>
-                                {users.map((user) => (
-                                    <tr
-                                        key={user.id}
-                                        className="border-b border-[#eee] dark:border-strokedark"
-                                    >
-                                        <td className="px-4 py-5 text-black dark:text-white">
-                                            {user.code}
-                                        </td>
-                                        <td className="px-4 py-5 text-black dark:text-white">
-                                            {user.email}
-                                        </td>
-                                        <td className="px-4 py-5 text-black dark:text-white">
-                                            {user.profile?.first_name} {user.profile?.last_name}
-                                        </td>
-                                        <td className="px-4 py-5">
-                                            <span
-                                                className={`inline-block rounded-full py-1 px-3 text-sm font-medium ${getRoleBadgeColor(
-                                                    user.role
-                                                )}`}
-                                            >
-                                                {user.role}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-5">
-                                            <span
-                                                className={`inline-block rounded-full py-1 px-3 text-sm font-medium ${getStatusBadgeColor(
-                                                    user.is_active
-                                                )}`}
-                                            >
-                                                {user.is_active ? "Activo" : "Inactivo"}
-                                            </span>
-                                        </td>
-                                        <td className="px-4 py-5">
-                                            <div className="flex space-x-3">
-                                                <button
-                                                    onClick={() => handleEdit(user.id)}
-                                                    className="inline-flex items-center justify-center rounded-md bg-meta-3 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
-                                                    title="Editar usuario"
-                                                >
-                                                    <svg
-                                                        className="h-5 w-5"
-                                                        fill="none"
-                                                        stroke="currentColor"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            strokeWidth={2}
-                                                            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                                                        />
-                                                    </svg>
-                                                </button>
+                                {users.map((user) => {
+                                    const role = user.role;
 
-                                                {user.is_active && (
+                                    return (
+                                        <tr
+                                            key={user.id}
+                                            className="border-b border-[#eee] dark:border-strokedark"
+                                        >
+                                            <td className="px-4 py-5 text-black dark:text-white">
+                                                {user.code}
+                                            </td>
+                                            <td className="px-4 py-5 text-black dark:text-white">
+                                                {user.email}
+                                            </td>
+                                            <td className="px-4 py-5 text-black dark:text-white">
+                                                {user.profile
+                                                    ? `${user.profile.first_name || ""} ${user.profile.last_name || ""}`.trim() || "-"
+                                                    : normalizeRole(user.role) === "ADMIN"
+                                                        ? "ADMIN"
+                                                        : "-"}
+                                            </td>
+                                            <td className="px-4 py-5">
+                                                <span
+                                                    className={`inline-block rounded-full py-1 px-3 text-sm font-medium ${getRoleBadgeColor(
+                                                        role
+                                                    )}`}
+                                                >
+                                                    {getRoleLabel(role)}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-5">
+                                                <span
+                                                    className={`inline-block rounded-full py-1 px-3 text-sm font-medium ${getStatusBadgeColor(
+                                                        user.is_active
+                                                    )}`}
+                                                >
+                                                    {user.is_active ? "Activo" : "Inactivo"}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 py-5">
+                                                <div className="flex space-x-3">
                                                     <button
-                                                        onClick={() => handleDeactivate(user)}
-                                                        className="inline-flex items-center justify-center rounded-md bg-meta-1 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
-                                                        title="Desactivar usuario"
+                                                        onClick={() => handleEdit(user.id)}
+                                                        className="inline-flex items-center justify-center rounded-md bg-meta-3 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
+                                                        title="Editar usuario"
                                                     >
                                                         <svg
                                                             className="h-5 w-5"
@@ -440,15 +464,56 @@ const UserList: React.FC = () => {
                                                                 strokeLinecap="round"
                                                                 strokeLinejoin="round"
                                                                 strokeWidth={2}
-                                                                d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
                                                             />
                                                         </svg>
                                                     </button>
-                                                )}
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
+
+                                                    {user.is_active && (
+                                                        <button
+                                                            onClick={() => handleDeactivate(user)}
+                                                            className="inline-flex items-center justify-center rounded-md bg-meta-1 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
+                                                            title="Desactivar usuario"
+                                                        >
+                                                            <svg
+                                                                className="h-5 w-5"
+                                                                fill="none"
+                                                                stroke="currentColor"
+                                                                viewBox="0 0 24 24"
+                                                            >
+                                                                <path
+                                                                    strokeLinecap="round"
+                                                                    strokeLinejoin="round"
+                                                                    strokeWidth={2}
+                                                                    d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z"
+                                                                />
+                                                            </svg>
+                                                        </button>
+                                                    )}
+
+                                                    {!user.is_active && (
+                                                        <button
+                                                            onClick={() => handleActivate(user)}
+                                                            type="button"
+                                                            title="Activar usuario"
+                                                            style={{
+                                                                backgroundColor: "#15803d",
+                                                                color: "#ffffff",
+                                                                border: "none",
+                                                                borderRadius: "6px",
+                                                                padding: "8px 16px",
+                                                                cursor: "pointer",
+                                                                fontWeight: "600",
+                                                            }}
+                                                        >
+                                                            Activar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
                             </tbody>
                         </table>
                     </div>

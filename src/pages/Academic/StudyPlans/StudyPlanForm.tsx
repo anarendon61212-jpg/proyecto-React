@@ -2,37 +2,41 @@ import React from "react";
 import { PlanEstudio } from "../../../models/PlanEstudio";
 
 export type StudyPlanFormValues = {
-  nombre: string;
-  semestre_sugerido: number;
+  name: string;
+  suggested_semester: number;
+  year: number;
+  is_published: boolean;
   creditos: number;
-  version: number;
-  activo: boolean;
+};
+
+type StudyPlanFormModel = PlanEstudio & {
+  creditos?: number;
 };
 
 interface StudyPlanFormProps {
-  studyPlan?: PlanEstudio | null;
+  studyPlan?: StudyPlanFormModel | null;
   onSubmit: (values: StudyPlanFormValues) => void;
   submitLabel: string;
 }
 
 const StudyPlanForm: React.FC<StudyPlanFormProps> = ({ studyPlan, onSubmit, submitLabel }) => {
   const [formData, setFormData] = React.useState<StudyPlanFormValues>({
-    nombre: studyPlan?.nombre || "",
-    semestre_sugerido: studyPlan?.semestre_sugerido || 1,
+    name: studyPlan?.name || "",
+    suggested_semester: studyPlan?.suggested_semester || 1,
+    year: studyPlan?.year || new Date().getFullYear(),
+    is_published: studyPlan?.is_published ?? true,
     creditos: studyPlan?.creditos || 1,
-    version: studyPlan?.version || 1,
-    activo: studyPlan?.activo ?? true,
   });
   const [loading, setLoading] = React.useState(false);
 
   React.useEffect(() => {
     if (studyPlan) {
       setFormData({
-        nombre: studyPlan.nombre || "",
-        semestre_sugerido: studyPlan.semestre_sugerido || 1,
+        name: studyPlan.name || "",
+        suggested_semester: studyPlan.suggested_semester || 1,
+        year: studyPlan.year || new Date().getFullYear(),
+        is_published: studyPlan.is_published ?? true,
         creditos: studyPlan.creditos || 1,
-        version: studyPlan.version || 1,
-        activo: studyPlan.activo ?? true,
       });
     }
   }, [studyPlan]);
@@ -74,8 +78,8 @@ const StudyPlanForm: React.FC<StudyPlanFormProps> = ({ studyPlan, onSubmit, subm
           </label>
           <input
             type="text"
-            name="nombre"
-            value={formData.nombre}
+            name="name"
+            value={formData.name}
             onChange={handleChange}
             className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
             required
@@ -90,8 +94,24 @@ const StudyPlanForm: React.FC<StudyPlanFormProps> = ({ studyPlan, onSubmit, subm
           <input
             type="number"
             min={1}
-            name="semestre_sugerido"
-            value={formData.semestre_sugerido}
+            name="suggested_semester"
+            value={formData.suggested_semester}
+            onChange={handleChange}
+            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+            required
+            disabled={loading}
+          />
+        </div>
+
+        <div>
+          <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+            Versión
+          </label>
+          <input
+            type="number"
+            min={1}
+            name="year"
+            value={formData.year}
             onChange={handleChange}
             className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
             required
@@ -116,33 +136,17 @@ const StudyPlanForm: React.FC<StudyPlanFormProps> = ({ studyPlan, onSubmit, subm
           />
         </div>
 
-        <div>
-          <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-            Versión
-          </label>
-          <input
-            type="number"
-            min={1}
-            name="version"
-            value={formData.version}
-            onChange={handleChange}
-            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
-            required
-            disabled={loading}
-          />
-        </div>
-
         <div className="flex items-center gap-3 pt-6">
           <input
             type="checkbox"
-            id="activo"
-            name="activo"
-            checked={formData.activo}
+            id="is_published"
+            name="is_published"
+            checked={formData.is_published}
             onChange={handleCheckboxChange}
             className="h-4 w-4 rounded border-stroke text-primary focus:ring-0"
             disabled={loading}
           />
-          <label htmlFor="activo" className="text-sm text-black dark:text-white">
+          <label htmlFor="is_published" className="text-sm text-black dark:text-white">
             Plan de estudios activo
           </label>
         </div>

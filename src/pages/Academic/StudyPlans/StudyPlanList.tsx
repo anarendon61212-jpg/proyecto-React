@@ -8,9 +8,21 @@ import { studyPlanService } from "../../../services/studyPlanService";
 import { careerService } from "../../../services/careerService";
 import { asignaturaService } from "../../../services/asignaturaService";
 
+const STUDY_PLAN_CREDITS_KEY = "study-plan-credits-overrides";
+
+const readCreditsOverrides = (): Record<string, number> => {
+    try {
+        const stored = localStorage.getItem(STUDY_PLAN_CREDITS_KEY);
+        return stored ? JSON.parse(stored) : {};
+    } catch {
+        return {};
+    }
+};
+
 const StudyPlanList: React.FC = () => {
     const navigate = useNavigate();
     const [studyPlans, setStudyPlans] = useState<PlanEstudio[]>([]);
+    const [planSubjectsById, setPlanSubjectsById] = useState<Record<string, any[]>>({});
     const [careers, setCareers] = useState<any[]>([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -26,6 +38,7 @@ const StudyPlanList: React.FC = () => {
         semestre_sugerido: 1,
         creditos: 1,
     });
+    const creditsOverrides = useMemo(() => readCreditsOverrides(), []);
 
     const resetAddSubjectData = () => {
         setAddSubjectData({
@@ -88,22 +101,86 @@ const StudyPlanList: React.FC = () => {
         loadStudyPlans();
     }, [selectedCareer, selectedVersion, showVersions]);
 
+    useEffect(() => {
+        const loadPlanSubjects = async () => {
+            if (studyPlans.length === 0) {
+                setPlanSubjectsById({});
+                return;
+            }
+
+            const results = await Promise.all(
+                studyPlans.map(async (plan) => {
+                    try {
+                        const relatedSubjects = await studyPlanService.getSubjectsByStudyPlan(plan.id);
+                        return [plan.id, Array.isArray(relatedSubjects) ? relatedSubjects : []] as const;
+                    } catch {
+                        return [plan.id, []] as const;
+                    }
+                })
+            );
+
+            setPlanSubjectsById(Object.fromEntries(results));
+        };
+
+        loadPlanSubjects();
+    }, [studyPlans]);
+
     const filteredPlans = useMemo(() => {
         let filtered = studyPlans;
         
         if (selectedVersion) {
             filtered = filtered.filter(plan => {
-                const version = (plan as any).version || (plan as any).year;
+                const version = plan.year;
                 return version.toString() === selectedVersion;
             });
         }
         
         return filtered.sort((a, b) => {
-            const versionA = (a as any).version || (a as any).year;
-            const versionB = (b as any).version || (b as any).year;
+            const versionA = a.year;
+            const versionB = b.year;
             return versionB - versionA;
         });
     }, [studyPlans, selectedVersion]);
+
+    const resolvePlanSubject = (plan: PlanEstudio) => {
+        const relatedSubjects = planSubjectsById[plan.id] || [];
+
+        if (relatedSubjects.length > 0) {
+            return relatedSubjects[0];
+        }
+
+        return null;
+    };
+
+    const resolvePlanName = (plan: PlanEstudio) => {
+        const relatedSubject = resolvePlanSubject(plan);
+
+        return relatedSubject?.nombre || relatedSubject?.name || plan.name || "Sin asignatura";
+    };
+
+    const resolvePlanCode = (plan: PlanEstudio) => {
+        const relatedSubject = resolvePlanSubject(plan);
+
+        return relatedSubject?.codigo || relatedSubject?.code || null;
+    };
+
+    const resolvePlanSemester = (plan: PlanEstudio) => {
+        if (plan.suggested_semester !== undefined && plan.suggested_semester !== null) {
+            return plan.suggested_semester;
+        }
+
+        return null;
+    };
+
+    const resolvePlanCredits = (plan: PlanEstudio) => {
+        const override = creditsOverrides[plan.id];
+
+        if (override !== undefined && override !== null) {
+            return override;
+        }
+
+        return null;
+    };
 
     const handleOpenAddSubject = () => {
         if (!selectedCareer) {
@@ -157,7 +234,7 @@ const StudyPlanList: React.FC = () => {
     const handleRemoveSubject = async (plan: PlanEstudio) => {
         const result = await Swal.fire({
             title: "¿Remover asignatura del plan de estudios?",
-            text: `Se removerá ${plan.nombre} del plan de estudios`,
+            text: `Se removerá ${resolvePlanName(plan)} del plan de estudios`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: "Sí, remover",
@@ -204,8 +281,7 @@ const StudyPlanList: React.FC = () => {
 
     const getVersionOptions = useMemo(() => {
         const versions = new Set(studyPlans.map(plan => {
-            const version = (plan as any).version || (plan as any).year || 1;
-            return version;
+            return plan.year || 1;
         }));
         return Array.from(versions).sort((a, b) => b - a);
     }, [studyPlans]);
@@ -412,41 +488,45 @@ const StudyPlanList: React.FC = () => {
                                             <td className="px-4 py-3">
                                                 <div>
                                                     <div className="font-medium text-black dark:text-white">
-                                                        {plan.nombre}
+                                                        {resolvePlanName(plan)}
                                                     </div>
-                                                    {plan.asignatura && 'code' in plan.asignatura && (
+                                                    {resolvePlanCode(plan) && (
                                                         <div className="text-sm text-gray-500">
-                                                            Código: {(plan.asignatura as any).code || (plan.asignatura as any).codigo}
+                                                            Código: {resolvePlanCode(plan)}
                                                         </div>
                                                     )}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                                                    {plan.semestre_sugerido}° semestre
+                                                    {resolvePlanSemester(plan) !== null
+                                                        ? `Semestre ${String(resolvePlanSemester(plan))}`
+                                                        : "Sin semestre"}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="font-medium">
-                                                    {plan.creditos} créditos
+                                                    {resolvePlanCredits(plan) !== null
+                                                        ? `${String(resolvePlanCredits(plan))} créditos`
+                                                        : "Sin créditos"}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                                    (plan as any).is_published 
+                                                    plan.is_published 
                                                         ? 'bg-success/10 text-success' 
                                                         : 'bg-warning/10 text-warning'
                                                 }`}>
-                                                    v{(plan as any).version || (plan as any).year}
+                                                    Versión {plan.year}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className={`rounded-full px-2 py-1 text-xs font-medium ${
-                                                    (plan as any).is_published 
+                                                    plan.is_published 
                                                         ? 'bg-success/10 text-success' 
                                                         : 'bg-warning/10 text-warning'
                                                 }`}>
-                                                    {(plan as any).is_published ? 'Activo' : 'Inactivo'}
+                                                    {plan.is_published ? 'Activo' : 'Inactivo'}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

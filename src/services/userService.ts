@@ -1,5 +1,6 @@
 import { api } from "../interceptors/authInterceptor";
 import { User } from "../models/User";
+import { extractRoleFromObject } from "../utils/roleUtils";
 
 const API_URL = "/users";
 
@@ -74,6 +75,49 @@ interface ApiResponse<T> {
     status?: number;
 }
 
+const getNestedData = <T>(payload: ApiResponse<T> | T): T => {
+    if (payload && typeof payload === "object" && "data" in (payload as object)) {
+        const dataPayload = payload as ApiResponse<T>;
+        if (dataPayload.data !== undefined) {
+            return dataPayload.data;
+        }
+    }
+
+    return payload as T;
+};
+
+const normalizeUser = (rawUser: any): User => {
+    const profile = rawUser?.profile || {};
+
+    return {
+        ...rawUser,
+        id: rawUser?.id ?? rawUser?.user_id ?? "",
+        email: rawUser?.email ?? rawUser?.correo ?? "",
+        code: rawUser?.code ?? rawUser?.codigo ?? "",
+        role: extractRoleFromObject(rawUser),
+        is_active:
+            typeof rawUser?.is_active === "boolean"
+                ? rawUser.is_active
+                : Boolean(rawUser?.isActive ?? rawUser?.activo ?? true),
+        profile: {
+            first_name: profile?.first_name ?? profile?.nombre ?? rawUser?.first_name ?? "",
+            last_name: profile?.last_name ?? profile?.apellido ?? rawUser?.last_name ?? "",
+            identification:
+                profile?.identification ?? profile?.cedula ?? rawUser?.identification ?? "",
+            phone: profile?.phone ?? profile?.telefono ?? rawUser?.phone,
+            specialty: profile?.specialty ?? profile?.especialidad ?? rawUser?.specialty,
+        },
+    };
+};
+
+const normalizeUsers = (payload: unknown): User[] => {
+    if (!Array.isArray(payload)) {
+        return [];
+    }
+
+    return payload.map((user) => normalizeUser(user));
+};
+
 class UserService {
     /**
      * Obtiene la lista de todos los usuarios
@@ -82,9 +126,8 @@ class UserService {
     async getUsers(): Promise<User[]> {
         try {
             const response = await api.get<ApiResponse<User[]>>(API_URL);
-            // El backend puede retornar { data: [...] } o directamente [...]
-            const data = response.data?.data || response.data;
-            return Array.isArray(data) ? data : [];
+            const data = getNestedData<User[] | unknown>(response.data);
+            return normalizeUsers(data);
         } catch (error: any) {
             console.error("Error al obtener usuarios:", error.response?.data || error.message);
             throw error;
@@ -113,8 +156,8 @@ class UserService {
             const response = await api.get<ApiResponse<User[]>>(
                 `${API_URL}/search?${queryParams.toString()}`
             );
-            const data = response.data?.data || response.data;
-            return Array.isArray(data) ? data : [];
+            const data = getNestedData<User[] | unknown>(response.data);
+            return normalizeUsers(data);
         } catch (error: any) {
             console.error("Error al buscar usuarios:", error.response?.data || error.message);
             throw error;
@@ -128,8 +171,8 @@ class UserService {
     async getUserById(id: string): Promise<User | null> {
         try {
             const response = await api.get<ApiResponse<User>>(`${API_URL}/${id}`);
-            const data = response.data?.data || response.data;
-            return data || null;
+            const data = getNestedData<User | unknown>(response.data);
+            return data ? normalizeUser(data) : null;
         } catch (error: any) {
             console.error("Usuario no encontrado:", error.response?.data || error.message);
             throw error;
@@ -144,8 +187,8 @@ class UserService {
         try {
             const payload = buildUserPayload(user, { includePassword: true });
             const response = await api.post<ApiResponse<User>>(API_URL, payload);
-            const data = response.data?.data || response.data;
-            return data || null;
+            const data = getNestedData<User | unknown>(response.data);
+            return data ? normalizeUser(data) : null;
         } catch (error: any) {
             console.error("Error al crear usuario:", error.response?.data || error.message);
             throw error;
@@ -160,8 +203,8 @@ class UserService {
         try {
             const payload = buildUserPayload(user);
             const response = await api.put<ApiResponse<User>>(`${API_URL}/${id}`, payload);
-            const data = response.data?.data || response.data;
-            return data || null;
+            const data = getNestedData<User | unknown>(response.data);
+            return data ? normalizeUser(data) : null;
         } catch (error: any) {
             console.error("Error al actualizar usuario:", error.response?.data || error.message);
             throw error;
@@ -177,16 +220,16 @@ class UserService {
             const response = await api.patch<ApiResponse<User>>(
                 `${API_URL}/${id}/deactivate`
             );
-            const data = response.data?.data || response.data;
-            return data || null;
+            const data = getNestedData<User | unknown>(response.data);
+            return data ? normalizeUser(data) : null;
         } catch (error: any) {
             const status = error?.response?.status;
             if (status === 404 || status === 405) {
                 const fallbackResponse = await api.put<ApiResponse<User>>(`${API_URL}/${id}`, {
                     is_active: false,
                 });
-                const fallbackData = fallbackResponse.data?.data || fallbackResponse.data;
-                return fallbackData || null;
+                const fallbackData = getNestedData<User | unknown>(fallbackResponse.data);
+                return fallbackData ? normalizeUser(fallbackData) : null;
             }
 
             console.error("Error al desactivar usuario:", error.response?.data || error.message);

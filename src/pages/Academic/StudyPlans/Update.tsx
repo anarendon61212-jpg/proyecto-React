@@ -7,10 +7,30 @@ import { PlanEstudio } from "../../../models/PlanEstudio";
 import { studyPlanService } from "../../../services/studyPlanService";
 import StudyPlanForm, { StudyPlanFormValues } from "./StudyPlanForm";
 
+type StudyPlanEditModel = PlanEstudio & {
+  creditos?: number;
+};
+
+const STUDY_PLAN_CREDITS_KEY = "study-plan-credits-overrides";
+
+const readCreditsOverrides = (): Record<string, number> => {
+  try {
+    return JSON.parse(localStorage.getItem(STUDY_PLAN_CREDITS_KEY) || "{}") || {};
+  } catch {
+    return {};
+  }
+};
+
+const saveCreditsOverride = (planId: string, credits: number) => {
+  const overrides = readCreditsOverrides();
+  overrides[planId] = credits;
+  localStorage.setItem(STUDY_PLAN_CREDITS_KEY, JSON.stringify(overrides));
+};
+
 const StudyPlanUpdate: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const [studyPlan, setStudyPlan] = useState<PlanEstudio | null>(null);
+  const [studyPlan, setStudyPlan] = useState<StudyPlanEditModel | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -24,7 +44,15 @@ const StudyPlanUpdate: React.FC = () => {
         if (!plan) {
           setError("Plan de estudio no encontrado");
         }
-        setStudyPlan(plan);
+        const creditsOverrides = readCreditsOverrides();
+        setStudyPlan(
+          plan
+            ? {
+                ...plan,
+                creditos: creditsOverrides[plan.id],
+              }
+            : null
+        );
       } catch (err: any) {
         setError(err.response?.data?.message || "Error al cargar el plan de estudio");
         toast.error(error || "Error al cargar el plan de estudio");
@@ -39,7 +67,9 @@ const StudyPlanUpdate: React.FC = () => {
   const handleUpdate = async (values: StudyPlanFormValues) => {
     try {
       if (!id) return;
-      await studyPlanService.updateStudyPlan(id, values);
+      const { creditos, ...backendValues } = values;
+      await studyPlanService.updateStudyPlan(id, backendValues);
+      saveCreditsOverride(id, creditos);
       await Swal.fire({
         title: "Completado",
         text: "Plan de estudio actualizado correctamente",
@@ -81,7 +111,19 @@ const StudyPlanUpdate: React.FC = () => {
                   <strong>Carrera:</strong> {studyPlan.carrera?.nombre || studyPlan.carrera_id}
                 </p>
                 <p className="text-sm text-black dark:text-white">
-                  <strong>Asignatura:</strong> {studyPlan.asignatura?.nombre || studyPlan.nombre}
+                  <strong>Asignatura:</strong> {studyPlan.name}
+                </p>
+                <p className="text-sm text-black dark:text-white">
+                  <strong>Versión:</strong> {studyPlan.year}
+                </p>
+                <p className="text-sm text-black dark:text-white">
+                  <strong>Semestre sugerido:</strong> {studyPlan.suggested_semester}
+                </p>
+                <p className="text-sm text-black dark:text-white">
+                  <strong>Estado:</strong> {studyPlan.is_published ? "Activo" : "Inactivo"}
+                </p>
+                <p className="text-sm text-black dark:text-white">
+                  <strong>Créditos locales:</strong> {studyPlan.creditos ?? "Sin créditos"}
                 </p>
               </div>
               <StudyPlanForm

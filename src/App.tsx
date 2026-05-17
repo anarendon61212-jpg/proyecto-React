@@ -12,6 +12,7 @@ import routes from './routes';
 import { store } from './store/store';
 
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import AdminOnly from './components/Auth/AdminOnly';
 
 const DefaultLayout = lazy(() => import('./layout/DefaultLayout'));
 
@@ -53,13 +54,20 @@ function App() {
               />
               {routes.map((routes, index) => {
                 const { path, component: Component } = routes;
+                const isUsersManagementRoute = path.startsWith('/users/');
                 return (
                   <Route
                     key={index}
                     path={path}
                     element={
                       <Suspense fallback={<Loader />}>
-                        <Component />
+                        {isUsersManagementRoute ? (
+                          <AdminOnly>
+                            <Component />
+                          </AdminOnly>
+                        ) : (
+                          <Component />
+                        )}
                       </Suspense>
                     }
                   />
