@@ -104,6 +104,15 @@ class RubricaService {
     return (response.data?.data || response.data) as CriterionApi;
   }
 
+  async updateCriterion(criterionId: string, payload: Partial<Pick<CriterionApi, 'name' | 'description' | 'weight'>>) {
+    const response = await api.put<ApiResponse<CriterionApi>>(`/evaluation/criteria/${criterionId}`, payload);
+    return (response.data?.data || response.data) as CriterionApi;
+  }
+
+  async deleteCriterion(criterionId: string) {
+    return api.delete(`/evaluation/criteria/${criterionId}`);
+  }
+
   async getScales(): Promise<ScaleApi[]> {
     try {
       const response = await api.get<ApiResponse<ScaleApi[]>>('/evaluation/scales');
@@ -122,6 +131,15 @@ class RubricaService {
   }): Promise<ScaleApi> {
     const response = await api.post<ApiResponse<ScaleApi>>('/evaluation/scales', payload);
     return (response.data?.data || response.data) as ScaleApi;
+  }
+
+  async updateScale(scaleId: string, payload: Partial<Pick<ScaleApi, 'name' | 'description' | 'value'>>) {
+    const response = await api.put<ApiResponse<ScaleApi>>(`/evaluation/scales/${scaleId}`, payload);
+    return (response.data?.data || response.data) as ScaleApi;
+  }
+
+  async deleteScale(scaleId: string) {
+    return api.delete(`/evaluation/scales/${scaleId}`);
   }
 }
 

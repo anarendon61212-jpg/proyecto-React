@@ -119,6 +119,10 @@ const normalizePersistedScales = (scales: ScaleApi[]): NormalizedScale[] | null 
       return null;
     }
 
+    if (parsedValue < 0 || parsedValue > 50) {
+      return null;
+    }
+
     if (usedValues.has(parsedValue)) {
       return null;
     }
@@ -191,6 +195,7 @@ const RubricManager = () => {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [criteria, setCriteria] = useState<CriterionForm[]>([createEmptyCriterion()]);
+  const [editingRubricId, setEditingRubricId] = useState<string | null>(null);
   const [selectedReusableScaleByCriterion, setSelectedReusableScaleByCriterion] =
     useState<Record<string, string>>({});
   const [showArchived, setShowArchived] = useState(false);
@@ -351,6 +356,49 @@ const RubricManager = () => {
     setDescription('');
     setCriteria([createEmptyCriterion()]);
     setSelectedReusableScaleByCriterion({});
+    setEditingRubricId(null);
+  };
+
+  const loadRubricIntoForm = (rubricId: string) => {
+    const rubric = rubricsById.get(rubricId);
+    if (!rubric) {
+      toast.error('Rubrica no encontrada');
+      return;
+    }
+
+    // set high-level fields
+    setTitle(rubric.title || '');
+    setDescription(rubric.description || '');
+    setSelectedSubjectId(subjectAssociations[rubricId] || '');
+    setEditingRubricId(rubricId);
+
+    // build criteria forms from loaded data
+    const rubricCriteria = criteriaData.filter((c) => c.rubric_id === rubricId);
+    if (rubricCriteria.length === 0) {
+      setCriteria([createEmptyCriterion()]);
+      return;
+    }
+
+    const mapped: CriterionForm[] = rubricCriteria.map((c) => {
+      const scalesFor = (scalesData || []).filter((s) => s.criterion_id === c.id);
+      const scaleForms: ScaleForm[] = scalesFor.length
+        ? cloneScalesToForm(
+            scalesFor.map((s) => ({ name: s.name, description: s.description, value: Number(s.value) })),
+          )
+        : [createEmptyScale(), createEmptyScale()];
+
+      return {
+        localId: createLocalId(),
+        name: c.name,
+        description: c.description || '',
+        weight: String(c.weight || 0),
+        scales: scaleForms,
+      };
+    });
+
+    setCriteria(mapped);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    toast.success('Rubrica cargada para edición');
   };
 
   const updateCriterion = (
@@ -484,6 +532,13 @@ const RubricManager = () => {
       if (!Number.isFinite(parsedValue)) {
         toast.error(
           `La escala ${scaleIndex + 1} del criterio ${criterionIndex + 1} debe tener un valor numerico`,
+        );
+        return null;
+      }
+
+      if (parsedValue < 0 || parsedValue > 50) {
+        toast.error(
+          `La escala ${scaleIndex + 1} del criterio ${criterionIndex + 1} debe tener un valor entre 0 y 50`,
         );
         return null;
       }
@@ -658,28 +713,77 @@ const RubricManager = () => {
     setSavingAction(action);
 
     try {
-      const rubric = await rubricaService.createRubric({
-        title: title.trim(),
-        description: description.trim(),
-        is_public: false,
-        is_archived: false,
-      });
+      let rubric;
 
-      for (const criterion of normalizedCriteria) {
-        const createdCriterion = await rubricaService.createCriterion({
-          rubric_id: rubric.id,
-          name: criterion.name,
-          description: criterion.description,
-          weight: criterion.weight,
+      if (editingRubricId) {
+        // update existing rubric
+        rubric = await rubricaService.updateRubric(editingRubricId, {
+          title: title.trim(),
+          description: description.trim(),
         });
 
-        for (const scale of criterion.scales) {
-          await rubricaService.createScale({
-            criterion_id: createdCriterion.id,
-            name: scale.name,
-            description: scale.description,
-            value: scale.value,
+        // delete existing criteria & scales for this rubric, then recreate
+        const existingCriteria = criteriaData.filter((c) => c.rubric_id === editingRubricId);
+        for (const ex of existingCriteria) {
+          const existingScales = scalesData.filter((s) => s.criterion_id === ex.id);
+          for (const sc of existingScales) {
+            try {
+              await rubricaService.deleteScale(sc.id);
+            } catch (e) {
+              // ignore individual delete errors
+            }
+          }
+
+          try {
+            await rubricaService.deleteCriterion(ex.id);
+          } catch (e) {
+            // ignore
+          }
+        }
+
+        // recreate criteria and scales
+        for (const criterion of normalizedCriteria) {
+          const createdCriterion = await rubricaService.createCriterion({
+            rubric_id: rubric.id,
+            name: criterion.name,
+            description: criterion.description,
+            weight: criterion.weight,
           });
+
+          for (const scale of criterion.scales) {
+            await rubricaService.createScale({
+              criterion_id: createdCriterion.id,
+              name: scale.name,
+              description: scale.description,
+              value: scale.value,
+            });
+          }
+        }
+      } else {
+        // create new rubric
+        rubric = await rubricaService.createRubric({
+          title: title.trim(),
+          description: description.trim(),
+          is_public: false,
+          is_archived: false,
+        });
+
+        for (const criterion of normalizedCriteria) {
+          const createdCriterion = await rubricaService.createCriterion({
+            rubric_id: rubric.id,
+            name: criterion.name,
+            description: criterion.description,
+            weight: criterion.weight,
+          });
+
+          for (const scale of criterion.scales) {
+            await rubricaService.createScale({
+              criterion_id: createdCriterion.id,
+              name: scale.name,
+              description: scale.description,
+              value: scale.value,
+            });
+          }
         }
       }
 
@@ -701,7 +805,7 @@ const RubricManager = () => {
           );
         }
       } else {
-        toast.success('Rubrica guardada como borrador');
+        toast.success(editingRubricId ? 'Rubrica actualizada' : 'Rubrica guardada como borrador');
       }
 
       resetForm();
@@ -715,6 +819,38 @@ const RubricManager = () => {
     }
   };
 
+  const isFormValidForPublish = (): boolean => {
+    if (!selectedSubjectId) return false;
+    if (!title.trim() || !description.trim()) return false;
+    if (criteria.length === 0) return false;
+
+    // check weights and scales quickly without toasts
+    let computedWeight = 0;
+    for (const criterion of criteria) {
+      const parsedWeight = Number(criterion.weight);
+      if (!Number.isFinite(parsedWeight) || parsedWeight <= 0) return false;
+      if (criterion.scales.length < 2 || criterion.scales.length > 5) return false;
+
+      const used = new Set<number>();
+      for (const scale of criterion.scales) {
+        const val = Number(scale.value);
+        if (
+          !scale.name.trim() ||
+          !scale.description.trim() ||
+          !Number.isFinite(val) ||
+          val < 0 ||
+          val > 50
+        )
+          return false;
+      }
+
+      computedWeight += parsedWeight;
+    }
+
+    if (Math.abs(computedWeight - 100) > 0.01) return false;
+    return true;
+  };
+
   const handlePublishDraft = async (rubric: RubricCardData) => {
     const result = await Swal.fire({
       title: 'Publicar rubrica',
@@ -726,6 +862,36 @@ const RubricManager = () => {
     });
 
     if (!result.isConfirmed) {
+      return;
+    }
+
+    if (!subjectAssociations[rubric.id]) {
+      toast.error('Asocia una asignatura a la rúbrica antes de publicarla');
+      return;
+    }
+
+    if (!rubric.title?.trim()) {
+      toast.error('La rúbrica debe tener un nombre antes de publicarse');
+      return;
+    }
+
+    if (!rubric.description?.trim()) {
+      toast.error('La rúbrica debe tener una descripción antes de publicarse');
+      return;
+    }
+
+    if ((rubric.criteria || []).length === 0) {
+      toast.error('La rúbrica no tiene criterios y no puede publicarse');
+      return;
+    }
+
+    if (rubric.criteria.some((criterion) => !criterion.description?.trim())) {
+      toast.error('Todos los criterios deben tener descripción antes de publicar');
+      return;
+    }
+
+    if (Math.abs((rubric.totalWeight || 0) - 100) > 0.01) {
+      toast.error('La suma de los pesos de los criterios debe ser 100% antes de publicar');
       return;
     }
 
@@ -1138,6 +1304,8 @@ const RubricManager = () => {
                               </label>
                               <input
                                 type="number"
+                                min="0"
+                                max="50"
                                 step="0.01"
                                 value={scale.value}
                                 onChange={(event) =>
@@ -1176,7 +1344,7 @@ const RubricManager = () => {
               <button
                 type="button"
                 onClick={() => persistRubric('publish')}
-                disabled={savingAction !== null}
+                disabled={savingAction !== null || !isFormValidForPublish()}
                 className="flex-1 rounded bg-primary px-5 py-3 font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
               >
                 {savingAction === 'publish'
@@ -1184,6 +1352,11 @@ const RubricManager = () => {
                   : 'Guardar y publicar'}
               </button>
             </div>
+            {!isFormValidForPublish() && (
+              <p className="mt-2 text-sm text-warning">
+                No se puede publicar: revisa que la rúbrica tenga una asignatura seleccionada, los criterios y escalas válidos, y que la suma de pesos sea 100%.
+              </p>
+            )}
           </div>
         </div>
 
@@ -1242,15 +1415,40 @@ const RubricManager = () => {
                         <p className="mb-2 text-sm text-bodydark2">
                           {rubric.description || 'Sin descripcion'}
                         </p>
-                        <p className="text-sm text-black dark:text-white">
-                          <span className="font-medium">Asignatura:</span>{' '}
-                          {associatedSubject
-                            ? getSubjectLabel(associatedSubject)
-                            : 'No disponible'}
-                        </p>
+                        <div>
+                          <label className="mb-1 block text-sm font-medium text-black dark:text-white">
+                            Asignatura asociada
+                          </label>
+                          <select
+                            value={subjectAssociations[rubric.id] || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              setSubjectAssociations((current) => ({
+                                ...current,
+                                [rubric.id]: value,
+                              }));
+                              toast.success('Asignatura asociada actualizada');
+                            }}
+                            className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
+                          >
+                            <option value="">Sin asignar</option>
+                            {activeSubjects.map((sub) => (
+                              <option key={sub.id} value={sub.id}>
+                                {getSubjectLabel(sub)}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          onClick={() => loadRubricIntoForm(rubric.id)}
+                          className="rounded border border-secondary px-4 py-2 text-sm font-medium text-secondary hover:bg-secondary hover:text-white"
+                        >
+                          Editar
+                        </button>
                         {!rubric.is_public && !rubric.is_archived && (
                           <button
                             type="button"

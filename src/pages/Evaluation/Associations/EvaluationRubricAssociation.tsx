@@ -11,6 +11,7 @@ import {
   EvaluationApi,
   evaluationService,
 } from '../../../services/evaluationService';
+import { gradeService } from '../../../services/gradeService';
 import { grupoService } from '../../../services/grupoService';
 import { asignaturaService } from '../../../services/asignaturaService';
 import { inscripcionService, EnrollmentApi } from '../../../services/inscripcionService';
@@ -439,6 +440,14 @@ const EvaluationRubricAssociation = () => {
     }
 
     if (evaluation.rubric_id) {
+      const grades = await gradeService.getEvaluationGrades(evaluation.id);
+      if (grades.length > 0) {
+        toast.error(
+          'No se puede cambiar la rúbrica porque ya existen notas registradas para esta evaluación.',
+        );
+        return;
+      }
+
       const result = await Swal.fire({
         title: 'Actualizar rubrica asociada',
         text: `La evaluacion "${evaluation.name}" cambiara la rubrica actual.`,
@@ -456,7 +465,11 @@ const EvaluationRubricAssociation = () => {
     setAssociatingEvaluationId(evaluation.id);
 
     try {
-      await evaluationService.associateRubric(evaluation.id, selectedRubricId);
+      await evaluationService.associateRubric(
+        evaluation.id,
+        selectedRubricId,
+        evaluation.subject_id,
+      );
       toast.success('Rubrica asociada correctamente');
       await loadData();
     } catch (error: any) {

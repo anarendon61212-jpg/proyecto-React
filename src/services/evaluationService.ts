@@ -47,10 +47,13 @@ class EvaluationService {
   async associateRubric(
     evaluationId: string,
     rubricId: string,
+    subjectId?: string,
   ): Promise<EvaluationApi | null> {
     try {
+      const payload = subjectId ? { subject_id: subjectId } : undefined;
       const response = await api.patch<ApiResponse<EvaluationApi>>(
         `/evaluation/evaluations/${evaluationId}/associate-rubric/${rubricId}`,
+        payload,
       );
       return readEntity<EvaluationApi>(response);
     } catch (error: any) {

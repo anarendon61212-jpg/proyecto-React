@@ -341,6 +341,22 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
                 <li>
                   <NavLink
+                    to="/evaluation/rubrics"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 4.5H15V6.75H3V4.5Z" fill="" />
+                      <path d="M3 9H15V11.25H3V9Z" fill="" />
+                      <path d="M3 13.5H10.5V15.75H3V13.5Z" fill="" />
+                    </svg>
+                    Rubricas
+                  </NavLink>
+                </li>
+
+                <li>
+                  <NavLink
                     to="/evaluation/associations"
                     className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
                       pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
