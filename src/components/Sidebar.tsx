@@ -373,6 +373,22 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
                 <li>
                   <NavLink
+                    to="/student-grades"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/student-grades') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M9 1.5C5.686 1.5 3 4.186 3 7.5C3 10.814 5.686 13.5 9 13.5C12.314 13.5 15 10.814 15 7.5C15 4.186 12.314 1.5 9 1.5ZM9 12C6.519 12 4.5 9.981 4.5 7.5C4.5 5.019 6.519 3 9 3C11.481 3 13.5 5.019 13.5 7.5C13.5 9.981 11.481 12 9 12Z" fill="" />
+                      <path d="M9 9C10.6569 9 12 7.65685 12 6C12 4.34315 10.6569 3 9 3C7.34315 3 6 4.34315 6 6C6 7.65685 7.34315 9 9 9Z" fill="" />
+                      <path d="M9 10.5C5.68629 10.5 3 13.1863 3 16.5H15C15 13.1863 12.3137 10.5 9 10.5Z" fill="" />
+                    </svg>
+                    Mis Calificaciones
+                  </NavLink>
+                </li>
+
+                <li>
+                  <NavLink
                     to="/final-grades"
                     className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
                       pathname.includes('/final-grades') && 'bg-graydark dark:bg-meta-4'
