@@ -37,22 +37,22 @@ const SubjectList: React.FC = () => {
 
     const filteredSubjects = useMemo(() => {
         let filtered = subjects;
-        
+
         // Filtrar por término de búsqueda
         if (searchTerm) {
-            filtered = filtered.filter(subject => 
-                subject.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                subject.codigo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                subject.descripcion.toLowerCase().includes(searchTerm.toLowerCase())
+            filtered = filtered.filter(subject =>
+                subject.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                subject.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                subject.description.toLowerCase().includes(searchTerm.toLowerCase())
             );
         }
-        
+
         // Filtrar por estado activo
         if (!showInactive) {
             filtered = filtered.filter(subject => subject.is_active);
         }
-        
-        return filtered.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || ''));
+
+        return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }, [subjects, searchTerm, showInactive]);
 
     const handleCreate = () => {
@@ -67,7 +67,7 @@ const SubjectList: React.FC = () => {
         const action = subject.is_active ? "archivar" : "activar";
         const result = await Swal.fire({
             title: `¿${action.charAt(0).toUpperCase() + action.slice(1)} asignatura?`,
-            text: `¿Estás seguro de que quieres ${action} la asignatura "${subject.nombre}"?`,
+            text: `¿Estás seguro de que quieres ${action} la asignatura "${subject.name}"?`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: `Sí, ${action}`,
@@ -91,7 +91,7 @@ const SubjectList: React.FC = () => {
     const handleDelete = async (subject: Asignatura) => {
         const result = await Swal.fire({
             title: "¿Eliminar asignatura?",
-            text: `¿Estás seguro de que quieres eliminar la asignatura "${subject.nombre}"? Esta acción no se puede deshacer.`,
+            text: `¿Estás seguro de que quieres eliminar la asignatura "${subject.name}"? Esta acción no se puede deshacer.`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: "Sí, eliminar",
@@ -203,24 +203,24 @@ const SubjectList: React.FC = () => {
                                         <tr key={subject.id} className="border-b border-stroke dark:border-strokedark">
                                             <td className="px-4 py-3">
                                                 <span className="font-medium text-primary">
-                                                    {subject.codigo}
+                                                    {subject.code}
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <div>
                                                     <div className="font-medium text-black dark:text-white">
-                                                        {subject.nombre}
+                                                        {subject.name}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
-                                                <div className="max-w-xs truncate text-sm text-gray-600 dark:text-gray-400" title={subject.descripcion}>
-                                                    {subject.descripcion}
+                                                <div className="max-w-xs truncate text-sm text-gray-600 dark:text-gray-400" title={subject.description}>
+                                                    {subject.description}
                                                 </div>
                                             </td>
                                             <td className="px-4 py-3">
                                                 <span className="rounded-full bg-primary/10 px-2 py-1 text-xs font-medium text-primary">
-                                                    {subject.creditos} créditos
+                                                    {subject.credits} créditos
                                                 </span>
                                             </td>
                                             <td className="px-4 py-3">

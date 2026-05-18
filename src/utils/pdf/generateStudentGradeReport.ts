@@ -12,7 +12,7 @@ export const generateStudentGradeReport = (
 
   const criteriaRows = gradeDetail.criteria_details
     .map(
-      (detail: StudentGradeDetail['criteria_details'][0]) => `
+      (detail) => `
     <tr>
       <td>${detail.criterion_name}</td>
       <td>${detail.criterion_weight}%</td>

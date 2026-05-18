@@ -10,10 +10,10 @@ const SubjectForm: React.FC = () => {
     const isEditing = !!id;
 
     const [formData, setFormData] = useState({
-        nombre: "",
-        codigo: "",
-        descripcion: "",
-        creditos: 1,
+        name: "",
+        code: "",
+        description: "",
+        credits: 1,
         is_active: true,
     });
 
@@ -25,7 +25,7 @@ const SubjectForm: React.FC = () => {
         const loadExistingCodes = async () => {
             try {
                 const subjects = await asignaturaService.getAsignaturas();
-                setExistingCodes(subjects.map(s => s.codigo));
+                setExistingCodes(subjects.map(s => s.code));
             } catch (error) {
                 console.error("Error al cargar códigos existentes:", error);
             }
@@ -38,10 +38,10 @@ const SubjectForm: React.FC = () => {
                     const subject = await asignaturaService.getAsignaturaById(id);
                     if (subject) {
                         setFormData({
-                            nombre: subject.nombre || "",
-                            codigo: subject.codigo || "",
-                            descripcion: subject.descripcion || "",
-                            creditos: subject.creditos || 1,
+                            name: subject.name || "",
+                            code: subject.code || "",
+                            description: subject.description || "",
+                            credits: subject.credits || 1,
                             is_active: subject.is_active ?? true,
                         });
                     }
@@ -59,34 +59,34 @@ const SubjectForm: React.FC = () => {
     }, [id]);
 
     const validateForm = (): boolean => {
-        if (!formData.nombre.trim()) {
+        if (!formData.name.trim()) {
             toast.error("El nombre es requerido");
             return false;
         }
 
-        if (!formData.codigo.trim()) {
+        if (!formData.code.trim()) {
             toast.error("El código es requerido");
             return false;
         }
 
         // Validar formato del código (alphanumeric y guiones bajos)
-        if (!/^[a-zA-Z0-9_-]+$/.test(formData.codigo)) {
+        if (!/^[a-zA-Z0-9_-]+$/.test(formData.code)) {
             toast.error("El código solo puede contener letras, números, guiones y guiones bajos");
             return false;
         }
 
         // Validar código único (excepto en modo edición)
-        if (!isEditing && existingCodes.includes(formData.codigo.toUpperCase())) {
+        if (!isEditing && existingCodes.includes(formData.code.toUpperCase())) {
             toast.error("Ya existe una asignatura con este código");
             return false;
         }
 
-        if (!formData.descripcion.trim()) {
+        if (!formData.description.trim()) {
             toast.error("La descripción es requerida");
             return false;
         }
 
-        if (formData.creditos < 1 || formData.creditos > 10) {
+        if (formData.credits < 1 || formData.credits > 10) {
             toast.error("Los créditos deben estar entre 1 y 10");
             return false;
         }
@@ -107,9 +107,9 @@ const SubjectForm: React.FC = () => {
         try {
             const subjectData = {
                 ...formData,
-                nombre: formData.nombre.trim(),
-                codigo: formData.codigo.toUpperCase().trim(),
-                descripcion: formData.descripcion.trim(),
+                name: formData.name.trim(),
+                code: formData.code.toUpperCase().trim(),
+                description: formData.description.trim(),
             };
 
             if (isEditing && id) {
@@ -134,12 +134,12 @@ const SubjectForm: React.FC = () => {
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value } = e.target;
         
-        if (name === "codigo") {
+        if (name === "code") {
             setFormData(prev => ({
                 ...prev,
                 [name]: value.toUpperCase()
             }));
-        } else if (name === "creditos") {
+        } else if (name === "credits") {
             setFormData(prev => ({
                 ...prev,
                 [name]: parseInt(value) || 1
@@ -190,8 +190,8 @@ const SubjectForm: React.FC = () => {
                             </label>
                             <input
                                 type="text"
-                                name="nombre"
-                                value={formData.nombre}
+                                name="name"
+                                value={formData.name}
                                 onChange={handleInputChange}
                                 placeholder="Ej: Programación Orientada a Objetos"
                                 className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
@@ -207,8 +207,8 @@ const SubjectForm: React.FC = () => {
                             </label>
                             <input
                                 type="text"
-                                name="codigo"
-                                value={formData.codigo}
+                                name="code"
+                                value={formData.code}
                                 onChange={handleInputChange}
                                 placeholder="Ej: PROG101"
                                 className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
@@ -227,8 +227,8 @@ const SubjectForm: React.FC = () => {
                                 Descripción <span className="text-red-500">*</span>
                             </label>
                             <textarea
-                                name="descripcion"
-                                value={formData.descripcion}
+                                name="description"
+                                value={formData.description}
                                 onChange={handleInputChange}
                                 placeholder="Describe el contenido y objetivos de la asignatura..."
                                 rows={4}
@@ -245,8 +245,8 @@ const SubjectForm: React.FC = () => {
                             </label>
                             <input
                                 type="number"
-                                name="creditos"
-                                value={formData.creditos}
+                                name="credits"
+                                value={formData.credits}
                                 onChange={handleInputChange}
                                 min="1"
                                 max="10"
