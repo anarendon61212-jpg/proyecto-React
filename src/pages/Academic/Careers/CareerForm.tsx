@@ -5,11 +5,12 @@ import { Career, CareerFormValues } from "../../../models/Career";
 
 interface CareerFormProps {
     career?: Career | null;
+    existingCareers?: Career[];
     onSubmit: (values: CareerFormValues) => void;
     submitLabel: string;
 }
 
-const CareerForm: React.FC<CareerFormProps> = ({ career, onSubmit, submitLabel }) => {
+const CareerForm: React.FC<CareerFormProps> = ({ career, existingCareers = [], onSubmit, submitLabel }) => {
     const initialValues: CareerFormValues = {
         name: career?.name || "",
         code: career?.code || "",
@@ -17,15 +18,30 @@ const CareerForm: React.FC<CareerFormProps> = ({ career, onSubmit, submitLabel }
         is_active: career?.is_active ?? true,
     };
 
+    const validationSchema = Yup.object({
+        name: Yup.string().required("El nombre es obligatorio"),
+        code: Yup.string()
+            .required("El código es obligatorio")
+            .test(
+                "unique-code",
+                "Ya existe una carrera con este código",
+                (value) => {
+                    if (!value) return true;
+                    const isEditing = !!career;
+                    const codeExists = existingCareers.some(
+                        (c) => c.code.toLowerCase() === value.toLowerCase() && c.id !== career?.id
+                    );
+                    return !codeExists || isEditing;
+                }
+            ),
+        description: Yup.string().nullable(),
+    });
+
     return (
         <Formik
             initialValues={initialValues}
             enableReinitialize
-            validationSchema={Yup.object({
-                name: Yup.string().required("El nombre es obligatorio"),
-                code: Yup.string().required("El código es obligatorio"),
-                description: Yup.string().nullable(),
-            })}
+            validationSchema={validationSchema}
             onSubmit={(values) => onSubmit(values)}
         >
             {({ handleSubmit }) => (

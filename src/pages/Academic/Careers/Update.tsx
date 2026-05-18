@@ -12,15 +12,20 @@ const CareerUpdate: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const [career, setCareer] = useState<Career | null>(null);
+    const [existingCareers, setExistingCareers] = useState<Career[]>([]);
 
     useEffect(() => {
-        const loadCareer = async () => {
+        const loadData = async () => {
             if (!id) return;
-            const data = await careerService.getCareerById(id);
-            setCareer(data);
+            const [careerData, careersData] = await Promise.all([
+                careerService.getCareerById(id),
+                careerService.getCareers(),
+            ]);
+            setCareer(careerData);
+            setExistingCareers(careersData);
         };
 
-        loadCareer();
+        loadData();
     }, [id]);
 
     const handleUpdate = async (values: CareerFormValues) => {
@@ -44,7 +49,12 @@ const CareerUpdate: React.FC = () => {
     return (
         <div>
             <Breadcrumb pageName="Editar Carrera" />
-            <CareerForm career={career} onSubmit={handleUpdate} submitLabel="Actualizar carrera" />
+            <CareerForm 
+                career={career} 
+                onSubmit={handleUpdate} 
+                submitLabel="Actualizar carrera"
+                existingCareers={existingCareers}
+            />
         </div>
     );
 };
