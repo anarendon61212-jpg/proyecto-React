@@ -41,7 +41,7 @@ const SemesterList: React.FC = () => {
             title: isOpen ? "¿Cerrar semestre?" : "¿Abrir semestre?",
             text: isOpen
                 ? `Se cerrará ${semester.name}`
-                : `Se abrirá ${semester.name}`,
+                : `Se abrirá ${semester.name}. Todos los demás semestres activos se cerrarán automáticamente.`,
             icon: "warning",
             showCancelButton: true,
             confirmButtonText: isOpen ? "Sí, cerrar" : "Sí, abrir",
@@ -55,6 +55,12 @@ const SemesterList: React.FC = () => {
                 await semesterService.closeSemester(semester.id);
                 toast.success("Semestre cerrado correctamente");
             } else {
+                // Close all other active semesters first
+                const activeSemesters = semesters.filter(s => s.is_active && s.id !== semester.id);
+                for (const activeSemester of activeSemesters) {
+                    await semesterService.closeSemester(activeSemester.id);
+                }
+                // Then activate the selected semester
                 await semesterService.updateSemester(semester.id, { is_active: true });
                 toast.success("Semestre abierto correctamente");
             }
