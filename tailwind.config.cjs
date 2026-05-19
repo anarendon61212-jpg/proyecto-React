@@ -1,4 +1,5 @@
 const defaultTheme = require('tailwindcss/defaultTheme')
+const colors = require('tailwindcss/colors')
 
 /** @type {import('tailwindcss').Config} */
 module.exports = {
@@ -11,39 +12,64 @@ module.exports = {
     colors: {
       current: 'currentColor',
       transparent: 'transparent',
+
+      /* Base palettes (used across the codebase) */
       white: '#FFFFFF',
-      black: '#1C2434',
+      black: '#111827',
+      slate: colors.slate,
+      gray: { ...colors.gray, DEFAULT: '#F3F4F6' },
+      red: colors.red,
+      green: colors.green,
+      blue: colors.blue,
+      amber: colors.amber,
+      yellow: colors.yellow,
+
+      /* EduGest brand */
+      primary: '#1B7F3B',
+      'primary-hover': '#166534',
+
+      /* App neutrals */
+      whiten: '#F8FAF9',
+      whiter: '#FFFFFF',
+      stroke: '#E5E7EB',
+
+      /* Legacy tokens (kept for template compatibility, but softened) */
       'black-2': '#010101',
-      body: '#64748B',
-      bodydark: '#AEB7C0',
-      bodydark1: '#DEE4EE',
-      bodydark2: '#8A99AF',
-      primary: '#3C50E0',
-      secondary: '#80CAEE',
-      stroke: '#E2E8F0',
-      gray: '#EFF4FB',
-      graydark: '#333A48',
-      'gray-2': '#F7F9FC',
-      'gray-3': '#FAFAFA',
-      whiten: '#F1F5F9',
-      whiter: '#F5F7FD',
-      boxdark: '#24303F',
-      'boxdark-2': '#1A222C',
-      strokedark: '#2E3A47',
-      'form-strokedark': '#3d4d60',
-      'form-input': '#1d2a39',
-      'meta-1': '#DC3545',
-      'meta-2': '#EFF2F7',
-      'meta-3': '#10B981',
-      'meta-4': '#313D4A',
-      'meta-5': '#259AE6',
-      'meta-6': '#FFBA00',
-      'meta-7': '#FF6766',
-      'meta-8': '#F0950C',
-      'meta-9': '#E5E7EB',
+      body: '#6B7280',
+      bodydark: '#6B7280',
+      bodydark1: '#111827',
+      bodydark2: '#6B7280',
+
+      graydark: '#EAF6EE',
+      'gray-2': '#FFFFFF',
+      'gray-3': '#F8FAF9',
+
+      boxdark: '#FFFFFF',
+      'boxdark-2': '#F8FAF9',
+      strokedark: '#E5E7EB',
+      'form-strokedark': '#E5E7EB',
+      'form-input': '#FFFFFF',
+
+      /* Status colors */
       success: '#219653',
       danger: '#D34053',
       warning: '#FFA70B',
+      'success-soft': '#EDF8F0',
+      'error-soft': '#FEECEC',
+      'warning-soft': '#FFF7E8',
+
+      /* Meta (used by template in several components) */
+      'meta-1': '#D34053',
+      'meta-2': '#EFF2F7',
+      'meta-3': '#219653',
+      'meta-4': '#EAF6EE',
+      'meta-5': '#259AE6',
+      'meta-6': '#FFA70B',
+      'meta-7': '#FF6766',
+      'meta-8': '#F0950C',
+      'meta-9': '#E5E7EB',
+
+      secondary: '#80CAEE',
     },
     screens: {
       '2xsm': '375px',
@@ -212,28 +238,44 @@ module.exports = {
         'icon-copy': 'url("../images/icon/icon-copy-alt.svg")',
       },
       transitionProperty: { width: 'width', stroke: 'stroke' },
+      borderRadius: {
+        sm: '0.75rem',
+        DEFAULT: '0.75rem',
+        md: '0.75rem',
+        lg: '0.75rem',
+        xl: '0.75rem',
+        '2xl': '1rem',
+      },
       borderWidth: {
         6: '6px',
       },
       boxShadow: {
-        default: '0px 8px 13px -3px rgba(0, 0, 0, 0.07)',
-        card: '0px 1px 3px rgba(0, 0, 0, 0.12)',
-        'card-2': '0px 1px 2px rgba(0, 0, 0, 0.05)',
-        switcher:
-          '0px 2px 4px rgba(0, 0, 0, 0.2), inset 0px 2px 2px #FFFFFF, inset 0px -1px 1px rgba(0, 0, 0, 0.1)',
-        'switch-1': '0px 0px 5px rgba(0, 0, 0, 0.15)',
-        1: '0px 1px 3px rgba(0, 0, 0, 0.08)',
-        2: '0px 1px 4px rgba(0, 0, 0, 0.12)',
-        3: '0px 1px 5px rgba(0, 0, 0, 0.14)',
-        4: '0px 4px 10px rgba(0, 0, 0, 0.12)',
-        5: '0px 1px 1px rgba(0, 0, 0, 0.15)',
-        6: '0px 3px 15px rgba(0, 0, 0, 0.1)',
-        7: '-5px 0 0 #313D4A, 5px 0 0 #313D4A',
-        8: '1px 0 0 #313D4A, -1px 0 0 #313D4A, 0 1px 0 #313D4A, 0 -1px 0 #313D4A, 0 3px 13px rgb(0 0 0 / 8%)',
+        /* Force a minimal, premium shadow system everywhere */
+        sm: '0 1px 3px rgba(0,0,0,0.04)',
+        DEFAULT: '0 1px 3px rgba(0,0,0,0.04)',
+        md: '0 1px 3px rgba(0,0,0,0.04)',
+        lg: '0 1px 3px rgba(0,0,0,0.04)',
+        xl: '0 1px 3px rgba(0,0,0,0.04)',
+        '2xl': '0 1px 3px rgba(0,0,0,0.04)',
+        '3xl': '0 1px 3px rgba(0,0,0,0.04)',
+
+        default: '0 1px 3px rgba(0,0,0,0.04)',
+        card: '0 1px 3px rgba(0,0,0,0.04)',
+        'card-2': '0 1px 3px rgba(0,0,0,0.04)',
+        switcher: '0 1px 3px rgba(0,0,0,0.04)',
+        'switch-1': '0 1px 3px rgba(0,0,0,0.04)',
+        1: '0 1px 3px rgba(0,0,0,0.04)',
+        2: '0 1px 3px rgba(0,0,0,0.04)',
+        3: '0 1px 3px rgba(0,0,0,0.04)',
+        4: '0 1px 3px rgba(0,0,0,0.04)',
+        5: '0 1px 3px rgba(0,0,0,0.04)',
+        6: '0 1px 3px rgba(0,0,0,0.04)',
+        7: '0 1px 3px rgba(0,0,0,0.04)',
+        8: '0 1px 3px rgba(0,0,0,0.04)',
       },
       dropShadow: {
-        1: '0px 1px 0px #E2E8F0',
-        2: '0px 1px 4px rgba(0, 0, 0, 0.12)',
+        1: '0 1px 3px rgba(0,0,0,0.04)',
+        2: '0 1px 3px rgba(0,0,0,0.04)',
       },
       keyframes: {
         rotating: {

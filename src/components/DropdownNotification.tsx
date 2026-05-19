@@ -97,8 +97,9 @@ const DropdownNotification = () => {
 
       <div
         ref={dropdown}
-        className={`absolute right-0 mt-2 w-80 rounded-sm border bg-white shadow ${dropdownOpen ? 'block' : 'hidden'
-          }`}
+        className={`absolute right-0 mt-2 w-80 rounded-2xl border border-[#E5E7EB] bg-white shadow-sm dark:border-strokedark dark:bg-boxdark ${
+          dropdownOpen ? 'block' : 'hidden'
+        }`}
       >
         <div className="px-4 py-3">
           <h5 className="text-sm font-medium">Notificaciones</h5>

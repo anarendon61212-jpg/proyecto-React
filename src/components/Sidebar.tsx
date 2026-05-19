@@ -65,15 +65,15 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   return (
     <aside
       ref={sidebar}
-      className={`absolute left-0 top-0 z-9999 flex h-screen w-72.5 flex-col overflow-y-hidden bg-black duration-300 ease-linear dark:bg-boxdark lg:static lg:translate-x-0 ${
+      className={`edugest-sidebar absolute left-0 top-0 z-9999 flex h-screen w-[280px] flex-col overflow-y-hidden border-r border-[#E5E7EB] bg-white duration-300 ease-linear dark:border-strokedark dark:bg-boxdark lg:static lg:translate-x-0 ${
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       }`}
     >
       {/* <!-- SIDEBAR HEADER --> */}
-      <div className="flex items-center justify-between gap-2 px-6 py-5.5 lg:py-6.5">
+      <div className="flex items-center justify-between gap-2 px-7 pt-7 pb-6">
         <NavLink to="/" className="flex items-center">
           <div className="text-xl font-bold text-gray-900 dark:text-white">
-            Dashboard
+            EduGest
           </div>
         </NavLink>
 
@@ -82,7 +82,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           onClick={() => setSidebarOpen(!sidebarOpen)}
           aria-controls="sidebar"
           aria-expanded={sidebarOpen}
-          className="block lg:hidden"
+          className="block rounded-xl border border-stroke bg-white p-2 text-gray-500 hover:bg-gray-50 hover:text-gray-900 dark:border-strokedark dark:bg-boxdark dark:text-bodydark dark:hover:bg-white/5 lg:hidden"
         >
           <svg
             className="fill-current"
@@ -103,11 +103,21 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
       <div className="no-scrollbar flex flex-col overflow-y-auto duration-300 ease-linear">
         {/* <!-- Sidebar Menu --> */}
-        <nav className="mt-5 py-4 px-4 lg:mt-9 lg:px-6">
+        <nav className="mt-5 px-0 pb-6 pt-0 lg:mt-9 lg:px-0
+          [&_a.group]:mx-3 [&_a.group]:rounded-xl [&_a.group]:px-4 [&_a.group]:py-3
+          [&_a.group]:text-[15px] [&_a.group]:font-medium [&_a.group]:text-gray-700 dark:[&_a.group]:text-bodydark1
+          [&_a.group:hover]:bg-[#F4F8F5] [&_a.group:hover]:text-[#1B7F3B]
+          dark:[&_a.group:hover]:bg-white/5 dark:[&_a.group:hover]:text-primary
+          [&_a.bg-graydark]:bg-[#EAF6EE] [&_a.bg-graydark]:text-[#1B7F3B]
+          dark:[&_a.bg-graydark]:bg-white/10 dark:[&_a.bg-graydark]:text-primary
+          [&_a_svg]:w-5 [&_a_svg]:h-5
+          [&_ul.mb-6]:gap-2
+          [&_h3]:ml-0 [&_h3]:mt-8 [&_h3]:mb-3 [&_h3]:px-6 [&_h3]:text-[11px] [&_h3]:uppercase [&_h3]:tracking-wide [&_h3]:font-semibold [&_h3]:text-gray-400 dark:[&_h3]:text-gray-500
+        ">
           {/* <!-- Menu Group --> */}
           <div>
             <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-              MENU
+              ACADÉMICO
             </h3>
 
             <ul className="mb-6 flex flex-col gap-1.5">
@@ -189,8 +199,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               eCommerce
@@ -234,8 +244,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
 
               {/* <!-- Menu Item ADMINISTRACIÓN --> */}
               <li>
-                <div className="mb-2 px-4 text-sm font-semibold text-bodydark2">
-                  ADMINISTRACIÓN
+                <div className="mt-8 mb-3 px-6 text-[11px] font-semibold uppercase tracking-wide text-gray-400 dark:text-gray-500">
+                  GESTIÓN
                 </div>
                   <ul className="flex flex-col gap-1.5">
                     <li>
@@ -522,8 +532,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/forms/form-elements"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Form Elements
@@ -533,8 +543,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/forms/form-layout"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Form Layout
@@ -636,7 +646,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           {isAdmin && (
             <div>
               <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-                ADMINISTRACIÓN
+                SISTEMA
               </h3>
 
               <ul className="mb-6 flex flex-col gap-1.5">
@@ -677,7 +687,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           {(isAdmin || isTeacher) && (
             <div>
               <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-                DOCENCIA
+                ACADÉMICO
               </h3>
 
               <ul className="mb-6 flex flex-col gap-1.5">
@@ -718,7 +728,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           {/* <!-- Others Group --> */}
           <div>
             <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
-              OTHERS
+              SISTEMA
             </h3>
 
             <ul className="mb-6 flex flex-col gap-1.5">
@@ -847,8 +857,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/ui/alerts"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Alerts
@@ -858,8 +868,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/ui/buttons"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Buttons
@@ -955,8 +965,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/auth/signin"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Sign In
@@ -966,8 +976,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             <NavLink
                               to="/auth/signup"
                               className={({ isActive }) =>
-                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white ' +
-                                (isActive && '!text-white')
+                                'group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-[#1B7F3B] ' +
+                                (isActive && '!text-[#1B7F3B]')
                               }
                             >
                               Sign Up

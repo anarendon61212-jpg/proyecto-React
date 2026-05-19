@@ -57,17 +57,17 @@ const DropdownUser = () => {
       <Link
         ref={trigger}
         onClick={() => setDropdownOpen(!dropdownOpen)}
-        className="flex items-center gap-4"
+        className="flex items-center gap-3 rounded-xl border border-[#E5E7EB] bg-white px-3 py-2 hover:bg-gray-50 dark:border-strokedark dark:bg-boxdark dark:hover:bg-white/5"
         to="#"
       >
         <span className="hidden text-right lg:block">
-          <span className="block text-sm font-medium text-black dark:text-white">
+          <span className="block text-sm font-semibold text-gray-900 dark:text-white">
             {user?.role === 'ADMIN' ? 'Administrador' : user?.profile?.first_name || 'Guest'}
           </span>
-          <span className="block text-xs">UX Designer</span>
+          <span className="block text-xs text-gray-500 dark:text-gray-400">UX Designer</span>
         </span>
 
-        <span className="h-12 w-12 rounded-full">
+        <span className="h-10 w-10 overflow-hidden rounded-full">
           <img src={UserOne} alt="User" />
         </span>
 
@@ -95,7 +95,7 @@ const DropdownUser = () => {
         ref={dropdown}
         onFocus={() => setDropdownOpen(true)}
         onBlur={() => setDropdownOpen(false)}
-        className={`absolute right-0 mt-4 flex w-62.5 flex-col rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark ${
+        className={`absolute right-0 mt-4 flex w-62.5 flex-col rounded-2xl border border-[#E5E7EB] bg-white shadow-sm dark:border-strokedark dark:bg-boxdark ${
           dropdownOpen === true ? 'block' : 'hidden'
         }`}
       >

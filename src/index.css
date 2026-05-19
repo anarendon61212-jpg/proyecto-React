@@ -4,8 +4,9 @@
 
 @layer base {
   body {
-    @apply font-satoshi font-normal text-base text-body bg-whiten relative z-1;
+    @apply font-satoshi font-normal text-base text-body bg-whiten relative z-1 antialiased;
   }
+
   /* Estilos base para botones: aseguran texto legible por defecto */
   button,
   input[type="button"],
@@ -16,6 +17,49 @@
 }
 
 @layer components {
+  /* --- EduGest reusable styles (optional, no JSX changes required) --- */
+  .eg-title {
+    @apply text-3xl font-bold text-black;
+  }
+
+  .eg-subtitle {
+    @apply text-sm text-gray-500;
+  }
+
+  .eg-label {
+    @apply text-sm font-medium text-black;
+  }
+
+  .eg-card {
+    @apply rounded-2xl border border-stroke bg-white p-6 shadow-sm;
+  }
+
+  .eg-input {
+    @apply w-full rounded-xl border border-stroke bg-white px-4 py-3 text-sm text-black outline-none transition;
+    @apply placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/10;
+  }
+
+  .eg-btn {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition;
+  }
+
+  .eg-btn-primary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition;
+    @apply bg-primary text-white;
+  }
+
+  .eg-btn-secondary {
+    @apply inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium transition;
+    @apply border border-stroke bg-white text-black hover:bg-gray-100;
+  }
+
+  .eg-dropdown {
+    @apply rounded-xl border border-stroke bg-white shadow-sm;
+  }
+
+  .eg-badge {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 text-xs font-medium;
+  }
 }
 
 @layer utilities {
@@ -34,6 +78,36 @@
   }
   .inbox-height {
     @apply h-[calc(100vh_-_8.125rem)] lg:h-[calc(100vh_-_5.625rem)];
+  }
+
+  /* --- EduGest global overrides (no JSX changes) --- */
+
+  /* Sidebar: remove the dark admin look */
+  aside.bg-black {
+    background-color: #ffffff !important;
+    border-right: 1px solid #e5e7eb !important;
+  }
+
+  /* Sidebar submenu links in template force white text on hover/active; soften to primary */
+  aside .hover\:text-white:hover {
+    color: #1b7f3b !important;
+  }
+  aside .\!text-white {
+    color: #1b7f3b !important;
+  }
+
+  /* Primary hover: slightly darker */
+  a.bg-primary:hover,
+  button.bg-primary:hover,
+  [role="button"].bg-primary:hover {
+    background-color: #166534 !important;
+  }
+
+  /* Cards: ensure a smoother, premium radius even if template uses rounded-sm */
+  .shadow-default,
+  .shadow-card,
+  .shadow-1 {
+    border-radius: 1rem !important;
   }
 }
 
