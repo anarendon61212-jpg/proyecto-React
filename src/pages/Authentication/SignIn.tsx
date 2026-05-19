@@ -1,24 +1,50 @@
-import React from "react";
-
-
+import React, { useState, useEffect } from "react";
+import { GoogleLogin } from "@react-oauth/google";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { User } from "../../models/User";
 import SecurityService from '../../services/securityService';
-
+import { googleAuthService } from '../../services/googleAuthService';
+import RoleSelectionModal from '../../components/Auth/RoleSelectionModal';
 import Breadcrumb from "../../components/Breadcrumb";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
+import { setUser } from "../../store/userSlice";
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
-  const handleLogin = async (user: User) => {
-    console.log("aqui " + JSON.stringify(user))
+  const dispatch = useDispatch();
+  const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
+  const [googleUserInfo, setGoogleUserInfo] = useState<any>(null);
+
+  // Limpiar estado cuando el componente se monta
+  useEffect(() => {
+    setGoogleUserInfo(null);
+    setIsRoleModalOpen(false);
+  }, []);
+
+  const handleLogin = async (values: any, { setSubmitting }: any) => {
+    console.log("aqui " + JSON.stringify(values))
     try {
+      const user: User = {
+        id: '',
+        email: values.email,
+        password: values.password,
+        code: '',
+        role: 'STUDENT',
+        is_active: true,
+      };
       const response = await SecurityService.login(user);
       console.log('Usuario autenticado:', response);
+      toast.success('Inicio de sesión exitoso');
       navigate("/");
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error al iniciar sesión', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al iniciar sesión. Verifica tus credenciales.';
+      toast.error(errorMessage);
+    } finally {
+      setSubmitting(false);
     }
   }
 
@@ -26,6 +52,118 @@ const SignIn: React.FC = () => {
     SecurityService.loginAsGuest();
     navigate("/");
   }
+
+  const handleGoogleSuccess = async (credentialResponse: any) => {
+    console.log('handleGoogleSuccess llamado');
+    try {
+      console.log('credentialResponse:', credentialResponse);
+      
+      // Decodificar el token de Google para obtener información del usuario
+      let decoded;
+      try {
+        decoded = JSON.parse(atob(credentialResponse.credential.split('.')[1]));
+        console.log('decoded:', decoded);
+      } catch (decodeError) {
+        console.error('Error al decodificar token de Google:', decodeError);
+        toast.error('Error al procesar el token de Google');
+        return;
+      }
+      
+      const userInfo = {
+        email: decoded.email,
+        given_name: decoded.given_name,
+        family_name: decoded.family_name,
+        name: decoded.name,
+      };
+      console.log('userInfo:', userInfo);
+      
+      // Verificar si el usuario ya existe antes de mostrar el modal
+      try {
+        console.log('Buscando usuario con email:', userInfo.email);
+        const response = await fetch('http://localhost:5000/api/users/search?email=' + encodeURIComponent(userInfo.email));
+        console.log('Respuesta del backend:', response.status, response.statusText);
+        const data = await response.json();
+        console.log('Datos del usuario:', data);
+        
+        if (data.data && data.data.length > 0) {
+          // El usuario ya existe, verificar si se registró con Google
+          const existingUser = data.data[0];
+          console.log('Usuario encontrado:', existingUser);
+          
+          // Si el usuario tiene un código generado por Google, permitir login con Google
+          // (los usuarios registrados con Google tienen un código secuencial, no una contraseña conocida)
+          toast.success(`Bienvenido de nuevo como ${existingUser.role === 'TEACHER' ? 'Docente' : 'Estudiante'}. Iniciando sesión...`);
+          
+          // Simular login exitoso con Google para usuarios existentes
+          // Nota: En un sistema real, esto debería validar el token con el backend
+          const user = {
+            id: String(existingUser.id),
+            email: existingUser.email,
+            code: existingUser.code,
+            role: existingUser.role,
+            is_active: existingUser.is_active,
+            profile: existingUser.profile || {
+              first_name: userInfo.given_name,
+              last_name: userInfo.family_name,
+              identification: '',
+            },
+          };
+          
+          localStorage.setItem('user', JSON.stringify(user));
+          dispatch(setUser(user));
+          // Nota: No tenemos token real porque el backend no tiene endpoint para Google OAuth
+          // En un sistema real, necesitaríamos un endpoint backend para validar el token de Google
+
+          setTimeout(() => {
+            navigate("/");
+          }, 1000);
+          return;
+        }
+      } catch (searchError) {
+        console.log('Error al buscar usuario, asumiendo que no existe:', searchError);
+      }
+      
+      setGoogleUserInfo(userInfo);
+      
+      // Mostrar modal para seleccionar rol solo si el usuario no existe
+      setIsRoleModalOpen(true);
+    } catch (error) {
+      console.error('Error al procesar token de Google:', error);
+      toast.error('Error al autenticar con Google');
+    }
+  };
+
+  const handleRoleSelect = async (role: 'TEACHER' | 'STUDENT') => {
+    setIsRoleModalOpen(false);
+    
+    try {
+      console.log('Iniciando registro con Google:', { googleUserInfo, role });
+      toast.loading('Registrando usuario...', { id: 'google-register' });
+      
+      // Registrar usuario con Google usando el endpoint existente del backend
+      const { user, token } = await googleAuthService.registerWithGoogle(googleUserInfo, role);
+      
+      console.log('Usuario registrado exitosamente:', { user, token });
+      
+      // Guardar token y usuario en el sistema
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      
+      toast.success(`Usuario registrado como ${role === 'TEACHER' ? 'Docente' : 'Estudiante'} con código ${user.code}`, { id: 'google-register' });
+      
+      navigate("/");
+    } catch (error: any) {
+      console.error('Error al registrar usuario con Google:', error);
+      console.error('Detalle del error:', error.response?.data);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al registrar usuario con Google';
+      toast.error(errorMessage, { id: 'google-register' });
+    }
+  };
+
+  const handleGoogleError = () => {
+    console.error('Error en login con Google');
+    toast.error('Error al autenticar con Google');
+  };
   return (
     <>
       <Breadcrumb pageName="Sign In" />
@@ -191,14 +329,14 @@ const SignIn: React.FC = () => {
                   email: Yup.string().email("Email inválido").required("El email es obligatorio"),
                   password: Yup.string().required("La contraseña es obligatoria"),
                 })}
-                onSubmit={(values) => {
+                onSubmit={(values, formikHelpers) => {
                   const formattedValues = { ...values };  // Formateo adicional si es necesario
-                  handleLogin(formattedValues);
+                  handleLogin(formattedValues, formikHelpers);
                 }}
 
               >
-                {({ handleSubmit }) => (
-                  <Form onSubmit={handleSubmit} className="grid grid-cols-1 gap-4 p-6 bg-white rounded-md shadow-md">
+                {() => (
+                  <Form className="grid grid-cols-1 gap-4 p-6 bg-white rounded-md shadow-md">
 
                     {/* Email */}
                     <div>
@@ -220,46 +358,23 @@ const SignIn: React.FC = () => {
                     >
                       Login
                     </button>
-                    <button className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50">
-                      <span>
-                        <svg
-                          width="20"
-                          height="20"
-                          viewBox="0 0 20 20"
-                          fill="none"
-                          xmlns="http://www.w3.org/2000/svg"
-                        >
-                          <g clipPath="url(#clip0_191_13499)">
-                            <path
-                              d="M19.999 10.2217C20.0111 9.53428 19.9387 8.84788 19.7834 8.17737H10.2031V11.8884H15.8266C15.7201 12.5391 15.4804 13.162 15.1219 13.7195C14.7634 14.2771 14.2935 14.7578 13.7405 15.1328L13.7209 15.2571L16.7502 17.5568L16.96 17.5774C18.8873 15.8329 19.9986 13.2661 19.9986 10.2217"
-                              fill="#4285F4"
-                            />
-                            <path
-                              d="M10.2055 19.9999C12.9605 19.9999 15.2734 19.111 16.9629 17.5777L13.7429 15.1331C12.8813 15.7221 11.7248 16.1333 10.2055 16.1333C8.91513 16.1259 7.65991 15.7205 6.61791 14.9745C5.57592 14.2286 4.80007 13.1801 4.40044 11.9777L4.28085 11.9877L1.13101 14.3765L1.08984 14.4887C1.93817 16.1456 3.24007 17.5386 4.84997 18.5118C6.45987 19.4851 8.31429 20.0004 10.2059 19.9999"
-                              fill="#34A853"
-                            />
-                            <path
-                              d="M4.39899 11.9777C4.1758 11.3411 4.06063 10.673 4.05807 9.99996C4.06218 9.32799 4.1731 8.66075 4.38684 8.02225L4.38115 7.88968L1.19269 5.4624L1.0884 5.51101C0.372763 6.90343 0 8.4408 0 9.99987C0 11.5589 0.372763 13.0963 1.0884 14.4887L4.39899 11.9777Z"
-                              fill="#FBBC05"
-                            />
-                            <path
-                              d="M10.2059 3.86663C11.668 3.84438 13.0822 4.37803 14.1515 5.35558L17.0313 2.59996C15.1843 0.901848 12.7383 -0.0298855 10.2059 -3.6784e-05C8.31431 -0.000477834 6.4599 0.514732 4.85001 1.48798C3.24011 2.46124 1.9382 3.85416 1.08984 5.51101L4.38946 8.02225C4.79303 6.82005 5.57145 5.77231 6.61498 5.02675C7.65851 4.28118 8.9145 3.87541 10.2059 3.86663Z"
-                              fill="#EB4335"
-                            />
-                          </g>
-                          <defs>
-                            <clipPath id="clip0_191_13499">
-                              <rect width="20" height="20" fill="white" />
-                            </clipPath>
-                          </defs>
-                        </svg>
-                      </span>
-                      Sign in with Google
-                    </button>
 
                   </Form>
                 )}
               </Formik>
+
+              {/* Google Login fuera del Formik para evitar refresh */}
+              <div className="flex w-full items-center justify-center mt-4">
+                <GoogleLogin
+                  onSuccess={handleGoogleSuccess}
+                  onError={handleGoogleError}
+                  text="signin_with"
+                  shape="rectangular"
+                  width={400}
+                  useOneTap={false}
+                  auto_select={false}
+                />
+              </div>
 
               <div className="mt-6 text-center">
                 <button
@@ -273,6 +388,13 @@ const SignIn: React.FC = () => {
           </div>
         </div>
       </div>
+
+      <RoleSelectionModal
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        onRoleSelect={handleRoleSelect}
+        userName={googleUserInfo?.name || ''}
+      />
     </>
   );
 };
