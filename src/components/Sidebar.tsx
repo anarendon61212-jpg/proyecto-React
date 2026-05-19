@@ -3,7 +3,7 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import SidebarLinkGroup from './SidebarLinkGroup';
 import { RootState } from '../store/store';
-import { extractRoleFromObject, isAdminRole } from '../utils/roleUtils';
+import { extractRoleFromObject, isAdminRole, isTeacherRole, isStudentRole } from '../utils/roleUtils';
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -14,7 +14,10 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
   const location = useLocation();
   const { pathname } = location;
   const user = useSelector((state: RootState) => state.user.user);
-  const canManageUsers = isAdminRole(extractRoleFromObject(user));
+  const userRole = extractRoleFromObject(user);
+  const isAdmin = isAdminRole(userRole);
+  const isTeacher = isTeacherRole(userRole);
+  const isStudent = isStudentRole(userRole);
 
   const trigger = useRef<any>(null);
   const sidebar = useRef<any>(null);
@@ -630,7 +633,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
           </div>
 
           {/* <!-- Administration Group --> */}
-          {canManageUsers && (
+          {isAdmin && (
             <div>
               <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
                 ADMINISTRACIÓN
@@ -666,6 +669,48 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
                 {/* <!-- Menu Item Users --> */}
+              </ul>
+            </div>
+          )}
+
+          {/* <!-- Teaching Group --> */}
+          {(isAdmin || isTeacher) && (
+            <div>
+              <h3 className="mb-4 ml-4 text-sm font-semibold text-bodydark2">
+                DOCENCIA
+              </h3>
+
+              <ul className="mb-6 flex flex-col gap-1.5">
+                <li>
+                  <NavLink
+                    to="/evaluation/rubrics"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3 4.5H15V6.75H3V4.5Z" fill="" />
+                      <path d="M3 9H15V11.25H3V9Z" fill="" />
+                      <path d="M3 13.5H10.5V15.75H3V13.5Z" fill="" />
+                    </svg>
+                    Rúbricas
+                  </NavLink>
+                </li>
+                <li>
+                  <NavLink
+                    to="/evaluation/associations"
+                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                      pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
+                    }`}
+                  >
+                    <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M4.5 3C3.67157 3 3 3.67157 3 4.5V13.5C3 14.3284 3.67157 15 4.5 15H8.25C8.66421 15 9 14.6642 9 14.25C9 13.8358 8.66421 13.5 8.25 13.5H4.5V4.5H13.5V8.25C13.5 8.66421 13.8358 9 14.25 9C14.6642 9 15 8.66421 15 8.25V4.5C15 3.67157 14.3284 3 13.5 3H4.5Z" fill="" />
+                      <path d="M10.5 11.25C10.5 10.8358 10.8358 10.5 11.25 10.5H15.75C16.1642 10.5 16.5 10.8358 16.5 11.25C16.5 11.6642 16.1642 12 15.75 12H11.25C10.8358 12 10.5 11.6642 10.5 11.25Z" fill="" />
+                      <path d="M12.75 9C13.1642 9 13.5 9.33579 13.5 9.75V14.25C13.5 14.6642 13.1642 15 12.75 15C12.3358 15 12 14.6642 12 14.25V9.75C12 9.33579 12.3358 9 12.75 9Z" fill="" />
+                    </svg>
+                    Evaluaciones
+                  </NavLink>
+                </li>
               </ul>
             </div>
           )}

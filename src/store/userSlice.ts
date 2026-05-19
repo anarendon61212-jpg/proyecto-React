@@ -20,10 +20,16 @@ const userSlice = createSlice({
     initialState,
     reducers: {
         setUser: (state: UserState, action: PayloadAction<User | null>) => {
+            console.log("USERSLICE REDUCER - ANTES:", state.user);
+            console.log("USERSLICE REDUCER - ACTION PAYLOAD:", action.payload);
+
             state.user = action.payload;
+
+            console.log("USERSLICE REDUCER - DESPUES:", state.user);
 
             if (action.payload) {
                 storage.setItem("user", JSON.stringify(action.payload));
+                console.log("USERSLICE REDUCER - GUARDADO EN LOCALSTORAGE:", JSON.stringify(action.payload));
             } else {
                 storage.removeItem("user");
             }
