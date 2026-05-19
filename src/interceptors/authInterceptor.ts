@@ -63,7 +63,13 @@ export class AuthInterceptor {
      * - Maneja sesiones expiradas (401)
      */
     private handleResponseError(error: any) {
+        console.log('Error en interceptor:', error.response?.status, error.response?.data);
         if (error.response?.status === 401) {
+            // No redirigir si el error es en el endpoint de login, ya que es parte del flujo normal
+            if (error.config?.url?.includes('/auth/login')) {
+                console.log("Error de autenticación en login, no redirigiendo");
+                return Promise.reject(error);
+            }
             console.log("No autorizado, redirigiendo a login...");
             window.location.href = "/auth/signin";
         }
