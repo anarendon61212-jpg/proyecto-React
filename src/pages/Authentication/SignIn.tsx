@@ -5,23 +5,36 @@ import * as Yup from "yup";
 import { User } from "../../models/User";
 import SecurityService from '../../services/securityService';
 import { googleAuthService } from '../../services/googleAuthService';
+import {
+  signInWithMicrosoft,
+  createOrUpdateFirestoreUser,
+  adminExists,
+  saveUserWithRole
+} from "../../services/firebaseAuthService";
 import RoleSelectionModal from '../../components/Auth/RoleSelectionModal';
 import Breadcrumb from "../../components/Breadcrumb";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../store/userSlice";
+import { store } from "../../store/store";
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [googleUserInfo, setGoogleUserInfo] = useState<any>(null);
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [adminExistsInSystem, setAdminExistsInSystem] = useState(false);
+  const [roleSelection, setRoleSelection] = useState<{
+    resolve?: (role: 'STUDENT' | 'TEACHER') => void;
+  }>({});
 
   // Limpiar estado cuando el componente se monta
   useEffect(() => {
     setGoogleUserInfo(null);
     setIsRoleModalOpen(false);
+    setShowRoleModal(false);
   }, []);
 
   const handleLogin = async (values: any, { setSubmitting }: any) => {
@@ -164,8 +177,116 @@ const SignIn: React.FC = () => {
     console.error('Error en login con Google');
     toast.error('Error al autenticar con Google');
   };
+
+  const handleMicrosoftLogin = async () => {
+    try {
+      const firebaseUser = await signInWithMicrosoft();
+      console.log("Firebase user:", firebaseUser);
+
+      // Step 1: Check if user exists and if ADMIN is already assigned
+      const { isNewUser, role: currentRole } =
+        await createOrUpdateFirestoreUser(firebaseUser);
+      console.log("User status:", { isNewUser, currentRole });
+
+      const adminExistsInSys = await adminExists();
+      setAdminExistsInSystem(adminExistsInSys);
+
+      let finalRole: string;
+
+      if (isNewUser) {
+        // Step 2: Show role selection modal (non-dismissible)
+        setShowRoleModal(true);
+
+        // Step 3: Wait for user selection via Promise
+        const selectedRole = await new Promise<'STUDENT' | 'TEACHER'>(resolve => {
+          setRoleSelection({ resolve });
+        });
+
+        console.log("Role selected:", selectedRole);
+
+        // Step 4: Save role to Firestore (updates PENDING role)
+        await saveUserWithRole(firebaseUser, selectedRole);
+        finalRole = selectedRole;
+
+        setShowRoleModal(false);
+      } else {
+        // Existing user - use saved role
+        finalRole = currentRole;
+      }
+
+      console.log("ANTES loginWithFirebaseUser with role:", finalRole);
+
+      const appUser = await SecurityService.loginWithFirebaseUser(firebaseUser, finalRole);
+
+      console.log("DESPUES loginWithFirebaseUser");
+      console.log("APP USER:", appUser);
+
+      console.log(
+        "LOCALSTORAGE USER:",
+        localStorage.getItem("user")
+      );
+
+      try {
+        const parsed = JSON.parse(
+          localStorage.getItem("user") || "{}"
+        );
+
+        console.log("LOCALSTORAGE PARSED:", parsed);
+        console.log("LOCALSTORAGE ROLE:", parsed.role);
+      } catch (e) {
+        console.error("ERROR PARSING LOCALSTORAGE:", e);
+      }
+
+      console.log("REDUX STATE:", store.getState());
+
+      console.log(
+        "REDUX USER:",
+        store.getState().user?.user
+      );
+
+      console.log(
+        "REDUX ROLE:",
+        store.getState().user?.user?.role
+      );
+
+      console.log("ANTES navigate");
+
+      navigate("/");
+
+      setTimeout(() => {
+        console.log(
+          "POST-NAVIGATION REDUX:",
+          store.getState().user?.user
+        );
+
+        console.log(
+          "POST-NAVIGATION PATH:",
+          window.location.pathname
+        );
+      }, 1000);
+    } catch (error) {
+      console.error("Error al iniciar sesion con Microsoft", error);
+      setShowRoleModal(false);
+    }
+  };
   return (
     <>
+      {/* Modal para selección de rol - Microsoft/Firebase */}
+      <RoleSelectionModal
+        isOpen={showRoleModal}
+        adminExists={adminExistsInSystem}
+        onSelectRole={async (role) => {
+          roleSelection.resolve?.(role);
+        }}
+      />
+
+      {/* Modal para selección de rol - Google */}
+      <RoleSelectionModal
+        isOpen={isRoleModalOpen}
+        onClose={() => setIsRoleModalOpen(false)}
+        onRoleSelect={handleRoleSelect}
+        userName={googleUserInfo?.name || ''}
+      />
       <Breadcrumb pageName="Sign In" />
 
       <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -357,6 +478,27 @@ const SignIn: React.FC = () => {
                       className="w-full cursor-pointer rounded-lg border border-primary bg-primary p-4 text-white transition hover:bg-opacity-90"
                     >
                       Login
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleMicrosoftLogin}
+                      className="flex w-full items-center justify-center gap-3.5 rounded-lg border border-stroke bg-gray p-4 hover:bg-opacity-50 dark:border-strokedark dark:bg-meta-4 dark:hover:bg-opacity-50"
+                    >
+                      <span>
+                        <svg
+                          width="20"
+                          height="20"
+                          viewBox="0 0 20 20"
+                          fill="none"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <rect width="9" height="9" fill="#F25022" />
+                          <rect x="11" width="9" height="9" fill="#7FBA00" />
+                          <rect y="11" width="9" height="9" fill="#00A4EF" />
+                          <rect x="11" y="11" width="9" height="9" fill="#FFB900" />
+                        </svg>
+                      </span>
+                      Iniciar sesión con Microsoft
                     </button>
 
                   </Form>

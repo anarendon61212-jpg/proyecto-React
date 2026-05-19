@@ -76,3 +76,17 @@ export const getRoleLabel = (value: unknown): string => {
             return "Sin rol";
     }
 };
+
+export const isTeacherRole = (value: unknown): boolean =>
+    normalizeRole(value) === "TEACHER";
+
+export const isStudentRole = (value: unknown): boolean =>
+    normalizeRole(value) === "STUDENT";
+
+export const hasRole = (value: unknown, role: UserRole): boolean =>
+    normalizeRole(value) === role;
+
+export const canAccessRoute = (userRole: UserRole | undefined, allowedRoles: UserRole[]): boolean => {
+    if (!userRole) return false;
+    return allowedRoles.includes(userRole);
+};

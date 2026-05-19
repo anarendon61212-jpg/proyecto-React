@@ -12,7 +12,8 @@ import routes from './routes';
 import { store } from './store/store';
 
 import ProtectedRoute from './components/Auth/ProtectedRoute';
-import AdminOnly from './components/Auth/AdminOnly';
+import RoleGuard from './components/Auth/RoleGuard';
+import Unauthorized from './pages/Unauthorized';
 
 const DefaultLayout = lazy(() => import('./layout/DefaultLayout'));
 
@@ -36,6 +37,7 @@ function App() {
         <Routes>
           <Route path="/auth/signin" element={<SignIn />} />
           <Route path="/auth/signup" element={<SignUp />} />
+          <Route path="/unauthorized" element={<Unauthorized />} />
 
           <Route element={<ProtectedRoute />}>
             <Route element={
@@ -52,19 +54,18 @@ function App() {
                   </Suspense>
                 }
               />
-              {routes.map((routes, index) => {
-                const { path, component: Component } = routes;
-                const isUsersManagementRoute = path.startsWith('/users/');
+              {routes.map((route, index) => {
+                const { path, component: Component, requiredRoles } = route;
                 return (
                   <Route
                     key={index}
                     path={path}
                     element={
                       <Suspense fallback={<Loader />}>
-                        {isUsersManagementRoute ? (
-                          <AdminOnly>
+                        {requiredRoles ? (
+                          <RoleGuard allowedRoles={requiredRoles}>
                             <Component />
-                          </AdminOnly>
+                          </RoleGuard>
                         ) : (
                           <Component />
                         )}

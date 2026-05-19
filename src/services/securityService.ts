@@ -5,6 +5,8 @@ import { store } from "../store/store";
 import { setUser } from "../store/userSlice";
 import { api } from "../interceptors/authInterceptor";
 import { extractRoleFromObject } from "../utils/roleUtils";
+import { getFirebaseIdToken, signOutFromFirebase } from "./firebaseAuthService";
+import type { User as FirebaseUser } from "firebase/auth";
 
 class SecurityService extends EventTarget {
     private readonly keyToken: string;
@@ -89,11 +91,45 @@ class SecurityService extends EventTarget {
         }
     }
 
+    async loginWithFirebaseUser(firebaseUser: FirebaseUser, role: string = "STUDENT") {
+        const token = await getFirebaseIdToken(firebaseUser);
+        const displayName = firebaseUser.displayName || "";
+        const [firstName, ...lastNameParts] = displayName.split(" ");
+
+        const normalizedUser: User = {
+            id: firebaseUser.uid,
+            email: firebaseUser.email || "",
+            code: firebaseUser.email || firebaseUser.uid,
+            role: role,
+            is_active: true,
+            profile: {
+                first_name: firstName || firebaseUser.email || "Usuario",
+                last_name: lastNameParts.join(" "),
+                identification: firebaseUser.uid,
+            },
+        };
+
+        console.log("SECURITYSERVICE - normalizedUser CREADO:", normalizedUser);
+
+        this.user = normalizedUser;
+        this.storage.setItem(this.userKey, JSON.stringify(normalizedUser));
+        this.storage.setItem(this.keyToken, token);
+
+        console.log("SECURITYSERVICE - ANTES dispatch setUser");
+        store.dispatch(setUser(normalizedUser));
+        console.log("SECURITYSERVICE - DESPUES dispatch setUser");
+        console.log("SECURITYSERVICE - REDUX STATE AHORA:", store.getState());
+
+        this.dispatchEvent(new CustomEvent("userChange", { detail: normalizedUser }));
+
+        return normalizedUser;
+    }
+
     getUser() {
         return this.user;
     }
 
-    logout() {
+    async logout() {
         this.user = null;
 
         this.storage.removeItem(this.userKey);
@@ -101,6 +137,12 @@ class SecurityService extends EventTarget {
 
         this.dispatchEvent(new CustomEvent("userChange", { detail: null }));
         store.dispatch(setUser(null));
+
+        try {
+            await signOutFromFirebase();
+        } catch (error) {
+            console.warn("No se pudo cerrar la sesion de Firebase:", error);
+        }
     }
 
     loginAsGuest() {

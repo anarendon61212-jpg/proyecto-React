@@ -10,8 +10,8 @@ const Header = (props: {
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
   return (
-    <header className="sticky top-0 z-999 flex w-full bg-white drop-shadow-1 dark:bg-boxdark dark:drop-shadow-none">
-      <div className="flex flex-grow items-center justify-between py-4 px-4 shadow-2 md:px-6 2xl:px-11">
+    <header className="sticky top-0 z-999 flex h-[72px] w-full items-center border-b border-[#E5E7EB] bg-white shadow-sm dark:border-strokedark dark:bg-boxdark">
+      <div className="flex w-full flex-grow items-center justify-between px-7">
         <div className="flex items-center gap-2 sm:gap-4 lg:hidden">
           {/* <!-- Hamburger Toggle BTN --> */}
           <button
@@ -64,7 +64,7 @@ const Header = (props: {
         <div className="hidden sm:block">
           <form action="https://formbold.com/s/unique_form_id" method="POST">
             <div className="relative">
-              <button className="absolute top-1/2 left-0 -translate-y-1/2">
+              <button className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
                 <svg
                   className="fill-body hover:fill-primary dark:fill-bodydark dark:hover:fill-primary"
                   width="20"
@@ -90,14 +90,14 @@ const Header = (props: {
 
               <input
                 type="text"
-                placeholder="Type to search..."
-                className="w-full bg-transparent pr-4 pl-9 focus:outline-none"
+                placeholder="Buscar..."
+                className="h-11 w-full rounded-2xl border border-[#E5E7EB] bg-[#F8FAF9] py-2 pl-11 pr-4 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none dark:border-strokedark dark:bg-white/5 dark:text-bodydark1 dark:placeholder:text-gray-500"
               />
             </div>
           </form>
         </div>
 
-        <div className="flex items-center gap-3 2xsm:gap-7">
+        <div className="flex items-center gap-3">
           <ul className="flex items-center gap-2 2xsm:gap-4">
             {/* <!-- Dark Mode Toggler --> */}
             <DarkModeSwitcher />
