@@ -1442,13 +1442,15 @@ const RubricManager = () => {
                       </div>
 
                       <div className="flex flex-wrap gap-2">
-                        <button
-                          type="button"
-                          onClick={() => loadRubricIntoForm(rubric.id)}
-                          className="rounded border border-secondary px-4 py-2 text-sm font-medium text-secondary hover:bg-secondary hover:text-white"
-                        >
-                          Editar
-                        </button>
+                        {!rubric.is_archived && !rubric.is_public && (
+                          <button
+                            type="button"
+                            onClick={() => loadRubricIntoForm(rubric.id)}
+                            className="rounded border border-secondary px-4 py-2 text-sm font-medium text-secondary hover:bg-secondary hover:text-white"
+                          >
+                            Editar
+                          </button>
+                        )}
                         {!rubric.is_public && !rubric.is_archived && (
                           <button
                             type="button"
