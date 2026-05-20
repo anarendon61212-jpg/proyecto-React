@@ -45,12 +45,13 @@ class StudyPlanService {
 
     /**
      * Obtiene planes de estudio activos por carrera
-     * GET /study-plans/career/:careerId/active
+     * GET /study-plans/search?career_id=<careerId>&is_active=true
      */
     async getActiveStudyPlansByCareer(careerId: string): Promise<PlanEstudio[]> {
         try {
             const response = await api.get<ApiResponse<PlanEstudio[]>>(
-                `${API_URL}/career/${careerId}/active`
+                `${API_URL}/search`,
+                { params: { career_id: careerId, is_active: true } }
             );
             const data = response.data?.data || response.data;
             return Array.isArray(data) ? data : [];
@@ -122,23 +123,23 @@ class StudyPlanService {
     }
 
     /**
-     * Agrega asignatura al plan de estudios de una carrera
-     * POST /study-plans/career/:careerId/add-subject
+     * Agrega asignatura al plan de estudios
+     * POST /study-plans/<study_plan_id>/subjects/<subject_id>
      */
     async addSubjectToStudyPlan(
-        careerId: string,
+        studyPlanId: string,
+        subjectId: string,
         subjectData: {
-            asignatura_id: string;
-            semestre_sugerido: number;
-            creditos: number;
+            suggested_semester: number;
+            credits: number;
         }
-    ): Promise<PlanEstudio> {
+    ): Promise<any> {
         try {
-            const response = await api.post<ApiResponse<PlanEstudio>>(
-                `${API_URL}/career/${careerId}/add-subject`,
+            const response = await api.post<ApiResponse<any>>(
+                `${API_URL}/${studyPlanId}/subjects/${subjectId}`,
                 subjectData
             );
-            return (response.data?.data || response.data) as PlanEstudio;
+            return response.data?.data || response.data;
         } catch (error: any) {
             console.error("Error al agregar asignatura al plan de estudio:", error.response?.data || error.message);
             throw error;
@@ -146,12 +147,12 @@ class StudyPlanService {
     }
 
     /**
-     * Remueve asignatura del plan de estudios de una carrera
-     * DELETE /study-plans/:id/remove-subject
+     * Remueve asignatura del plan de estudios
+     * DELETE /study-plans/<study_plan_id>/subjects/<subject_id>
      */
-    async removeSubjectFromStudyPlan(id: string): Promise<void> {
+    async removeSubjectFromStudyPlan(studyPlanId: string, subjectId: string): Promise<void> {
         try {
-            await api.delete(`${API_URL}/${id}/remove-subject`);
+            await api.delete(`${API_URL}/${studyPlanId}/subjects/${subjectId}`);
         } catch (error: any) {
             console.error("Error al remover asignatura del plan de estudio:", error.response?.data || error.message);
             throw error;
@@ -160,14 +161,30 @@ class StudyPlanService {
 
     /**
      * Crea una nueva versión del plan de estudios
-     * POST /study-plans/career/:careerId/new-version
+     * Obtiene el plan activo actual y crea uno nuevo con el año incrementado
      */
-    async createNewVersion(careerId: string): Promise<PlanEstudio[]> {
+    async createNewVersion(careerId: string): Promise<PlanEstudio> {
         try {
-            const response = await api.post<ApiResponse<PlanEstudio[]>>(
-                `${API_URL}/career/${careerId}/new-version`
-            );
-            return (response.data?.data || response.data) as PlanEstudio[];
+            // Obtener el plan activo actual de la carrera
+            const activePlans = await this.getActiveStudyPlansByCareer(careerId);
+            
+            if (activePlans.length === 0) {
+                throw new Error("No hay un plan de estudio activo para esta carrera");
+            }
+
+            const currentPlan = activePlans[0];
+            
+            // Crear nuevo plan con el año incrementado
+            const newPlanData = {
+                career_id: careerId,
+                name: currentPlan.name,
+                year: currentPlan.year + 1,
+                suggested_semester: currentPlan.suggested_semester,
+                is_published: false
+            };
+
+            const response = await api.post<ApiResponse<PlanEstudio>>(API_URL, newPlanData);
+            return (response.data?.data || response.data) as PlanEstudio;
         } catch (error: any) {
             console.error("Error al crear nueva versión del plan de estudio:", error.response?.data || error.message);
             throw error;

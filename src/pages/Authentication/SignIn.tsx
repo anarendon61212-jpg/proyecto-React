@@ -81,6 +81,7 @@ const SignIn: React.FC = () => {
   // Handler simple para Auth0 similar a Google
   const handleAuth0Success = async (auth0User: any) => {
     console.log('handleAuth0Success llamado');
+    console.log('Auth0 user completo:', auth0User);
 
     try {
       const userInfo = {
@@ -88,6 +89,7 @@ const SignIn: React.FC = () => {
         given_name: auth0User.given_name || auth0User.nickname || auth0User.name?.split(' ')[0] || 'Usuario',
         family_name: auth0User.family_name || auth0User.name?.split(' ').slice(1).join(' ') || '',
         name: auth0User.name,
+        nickname: auth0User.nickname,
         sub: auth0User.sub,
       };
 
@@ -120,9 +122,12 @@ const SignIn: React.FC = () => {
 
           toast.success(`Bienvenido de nuevo como ${existingUser.role === 'TEACHER' ? 'Docente' : 'Estudiante'}. Iniciando sesión...`);
 
+          // Si Auth0 no devuelve email, usar uno basado en el nickname de GitHub
+          const fallbackEmail = userInfo.email || `${userInfo.nickname || userInfo.sub || 'github-user'}@github.local`;
+
           const user = {
             id: String(existingUser.id),
-            email: existingUser.email,
+            email: fallbackEmail, // Usar el correo real de GitHub o uno basado en nickname
             code: existingUser.code,
             role: existingUser.role,
             is_active: existingUser.is_active,

@@ -242,3 +242,16 @@ span.flatpickr-weekday,
 [x-cloak] {
   display: none !important;
 }
+
+/* SweetAlert2 custom button styles */
+.swal2-confirm-button {
+  @apply bg-primary text-white px-6 py-2.5 rounded-lg font-medium hover:bg-primary/90 transition-colors !important;
+  z-index: 9999 !important;
+  position: relative !important;
+}
+
+.swal2-cancel-button {
+  @apply bg-gray-200 text-black px-6 py-2.5 rounded-lg font-medium hover:bg-gray-300 transition-colors !important;
+  z-index: 9999 !important;
+  position: relative !important;
+}

@@ -211,6 +211,11 @@ const StudyPlanList: React.FC = () => {
             return;
         }
 
+        if (!selectedCareer) {
+            toast.error("Por favor seleccione una carrera primero");
+            return;
+        }
+
         if (addSubjectData.semestre_sugerido < 1 || addSubjectData.semestre_sugerido > 10) {
             toast.error("El semestre sugerido debe estar entre 1 y 10");
             return;
@@ -222,16 +227,40 @@ const StudyPlanList: React.FC = () => {
         }
 
         try {
-            await studyPlanService.addSubjectToStudyPlan(selectedCareer, addSubjectData);
+            // Obtener el plan de estudio activo de la carrera
+            const activePlans = await studyPlanService.getActiveStudyPlansByCareer(selectedCareer);
+            
+            if (activePlans.length === 0) {
+                toast.error("No hay un plan de estudio activo para esta carrera");
+                return;
+            }
+
+            const studyPlanId = activePlans[0].id;
+            
+            await studyPlanService.addSubjectToStudyPlan(
+                studyPlanId,
+                addSubjectData.asignatura_id,
+                {
+                    suggested_semester: addSubjectData.semestre_sugerido,
+                    credits: addSubjectData.creditos
+                }
+            );
             toast.success("Asignatura agregada exitosamente");
             handleCloseAddSubject();
             loadStudyPlans();
         } catch (error: any) {
-            toast.error(error.response?.data?.message || "Error al agregar asignatura");
+            toast.error(error.response?.data?.message || error.message || "Error al agregar asignatura");
         }
     };
 
     const handleRemoveSubject = async (plan: PlanEstudio) => {
+        const relatedSubject = resolvePlanSubject(plan);
+        
+        if (!relatedSubject) {
+            toast.error("No se encontró la asignatura asociada");
+            return;
+        }
+
         const result = await Swal.fire({
             title: "¿Remover asignatura del plan de estudios?",
             text: `Se removerá ${resolvePlanName(plan)} del plan de estudios`,
@@ -243,11 +272,11 @@ const StudyPlanList: React.FC = () => {
 
         if (result.isConfirmed) {
             try {
-                await studyPlanService.removeSubjectFromStudyPlan(plan.id);
+                await studyPlanService.removeSubjectFromStudyPlan(plan.id, relatedSubject.id);
                 toast.success("Asignatura removida exitosamente");
                 loadStudyPlans();
             } catch (error: any) {
-                toast.error(error.response?.data?.message || "Error al remover asignatura");
+                toast.error(error.response?.data?.message || error.message || "Error al remover asignatura");
             }
         }
     };
@@ -265,16 +294,21 @@ const StudyPlanList: React.FC = () => {
             showCancelButton: true,
             confirmButtonText: "Sí, crear",
             cancelButtonText: "Cancelar",
+            customClass: {
+                confirmButton: "swal2-confirm-button",
+                cancelButton: "swal2-cancel-button"
+            },
+            buttonsStyling: false
         });
 
         if (result.isConfirmed) {
             try {
-                await studyPlanService.createNewVersion(selectedCareer);
-                toast.success("Nueva versión creada exitosamente");
+                const newVersion = await studyPlanService.createNewVersion(selectedCareer);
+                toast.success(`Nueva versión ${newVersion.year} creada exitosamente`);
                 setShowVersions(true);
                 loadStudyPlans();
             } catch (error: any) {
-                toast.error(error.response?.data?.message || "Error al crear nueva versión");
+                toast.error(error.response?.data?.message || error.message || "Error al crear nueva versión");
             }
         }
     };
@@ -392,7 +426,7 @@ const StudyPlanList: React.FC = () => {
                                             <option value="">Seleccione una asignatura...</option>
                                             {subjects.map((subject) => (
                                                 <option key={subject.id} value={subject.id}>
-                                                    {subject.nombre}
+                                                    {subject.name}
                                                 </option>
                                             ))}
                                         </select>

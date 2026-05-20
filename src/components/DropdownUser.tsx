@@ -14,7 +14,10 @@ const DropdownUser = () => {
   const navigate = useNavigate();
   const { isAuthenticated, user: auth0User, logout } = useAuth0();
   const isGuest = !isAuthenticated && user?.id === "0" && user?.profile?.first_name === 'Invitado';
-  
+
+  console.log('DropdownUser - user:', user);
+  console.log('DropdownUser - auth0User:', auth0User);
+
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
 
@@ -76,7 +79,7 @@ const DropdownUser = () => {
             {auth0User?.name || user?.profile?.first_name || (user?.role === 'ADMIN' ? 'Administrador' : 'Guest')}
           </span>
           <span className="block text-xs text-gray-500 dark:text-gray-400">
-            {auth0User?.email || user?.email || 'Usuario autenticado'}
+            {user?.email || auth0User?.email || 'Usuario autenticado'}
           </span>
         </span>
 

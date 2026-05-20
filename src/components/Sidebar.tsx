@@ -203,7 +203,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 (isActive && '!text-[#1B7F3B]')
                               }
                             >
-                              eCommerce
+                              Datos académicos
                             </NavLink>
                           </li>
                         </ul>
