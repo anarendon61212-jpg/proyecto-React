@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import toast from 'react-hot-toast';
 import Breadcrumb from '../../../components/Breadcrumb';
 import { careerService } from '../../../services/careerService';
@@ -16,6 +17,10 @@ import {
 import { semesterService } from '../../../services/semesterService';
 import { studyPlanService } from '../../../services/studyPlanService';
 import { asignaturaService } from '../../../services/asignaturaService';
+import { pushNotification } from '../../../utils/notificationStore';
+
+// Límite máximo de créditos permitidos por semestre
+const MAX_CREDITS_ALLOWED = 20;
 
 type StudentApi = SearchStudentApi & {
   is_active?: boolean;
@@ -361,6 +366,16 @@ const EnrollmentForm = () => {
     [enrollments, selectedStudentId],
   );
 
+  const activeStudentEnrollments = useMemo(
+    () =>
+      enrollments.filter(
+        (enrollment) =>
+          enrollment.student_id === selectedStudentId &&
+          normalizeText(enrollment.status || 'ACTIVE') === 'active',
+      ),
+    [enrollments, selectedStudentId],
+  );
+
   const activeEnrollmentCountByGroupId = useMemo(() => {
     const counts = new Map<string, number>();
 
@@ -607,6 +622,12 @@ const EnrollmentForm = () => {
   };
 
   const handleSelectStudent = (student: StudentApi) => {
+    // Validar que el estudiante esté activo (precondición)
+    if (student.is_active === false) {
+      toast.error(`El estudiante ${getStudentLabel(student)} no está activo en el sistema y no puede inscribirse`);
+      return;
+    }
+
     setSelectedStudentId(student.id);
     setStudentSearch(getStudentLabel(student));
     setStudents([]);
@@ -635,6 +656,22 @@ const EnrollmentForm = () => {
     }
   };
 
+  const handleCancelEnrollment = async (enrollmentId: string) => {
+    if (!window.confirm('¿Está seguro que desea cancelar esta inscripción?')) {
+      return;
+    }
+
+    try {
+      await inscripcionService.cancelEnrollment(enrollmentId);
+      toast.success('Inscripción cancelada correctamente');
+      await resetSelection();
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Error al cancelar inscripción';
+      toast.error(errorMessage);
+      console.error('Error cancelando inscripción:', error);
+    }
+  };
+
   const handleCreateEnrollments = async () => {
     if (!selectedStudentId) {
       toast.error('Selecciona un estudiante');
@@ -648,6 +685,14 @@ const EnrollmentForm = () => {
 
     if (selectedGroupIds.length === 0) {
       toast.error('Selecciona al menos un grupo');
+      return;
+    }
+
+    // Validar límite de créditos máximos permitidos
+    if (totalSelectedCredits > MAX_CREDITS_ALLOWED) {
+      toast.error(
+        `La suma de créditos (${totalSelectedCredits}) excede el límite permitido de ${MAX_CREDITS_ALLOWED} créditos por semestre`,
+      );
       return;
     }
 
@@ -691,6 +736,20 @@ const EnrollmentForm = () => {
     }
 
     if (successfulEnrollments.length > 0) {
+      // Notificar al estudiante inscrito
+      const student = students.find((s) => s.id === selectedStudentId) || {
+        id: selectedStudentId,
+        code: studentSearch,
+      };
+
+      pushNotification({
+        title: 'Inscripción exitosa',
+        message: `Se completó la inscripción en ${successfulEnrollments.length} grupo(s): ${successfulEnrollments.join(', ')}`,
+        recipientUserId: selectedStudentId,
+        recipientCode: student.code || student.codigo || student.user_code,
+        recipientIdentification: student.cedula || student.identification || student.profile?.identification,
+      });
+
       toast.success(
         successfulEnrollments.length === 1
           ? 'Inscripción creada correctamente'
@@ -982,13 +1041,13 @@ const EnrollmentForm = () => {
                       {selectedGroups.length} grupo(s) seleccionado(s)
                     </p>
                     <p className="text-sm text-bodydark2">
-                      Total de créditos seleccionados: {totalSelectedCredits}
+                      Total de créditos seleccionados: {totalSelectedCredits} / {MAX_CREDITS_ALLOWED} máximo
                     </p>
                   </div>
 
                   <button
                     onClick={handleCreateEnrollments}
-                    disabled={saving}
+                    disabled={saving || totalSelectedCredits > MAX_CREDITS_ALLOWED}
                     className="inline-flex justify-center rounded bg-primary px-5 py-3 font-medium text-white hover:bg-opacity-90 disabled:opacity-50"
                   >
                     {saving ? 'Inscribiendo...' : 'Inscribir en grupos seleccionados'}
@@ -996,6 +1055,47 @@ const EnrollmentForm = () => {
                 </div>
               </div>
             )}
+
+            {selectedStudentId && activeStudentEnrollments.length > 0 && (
+              <div className="space-y-4">
+                <div>
+                  <h4 className="mb-3 text-lg font-semibold text-black dark:text-white">
+                    Inscripciones activas del estudiante
+                  </h4>
+                  <div className="space-y-2">
+                    {activeStudentEnrollments.map((enrollment) => {
+                      const enrollmentGroup = groups.find((g) => g.id === enrollment.group_id);
+                      const enrollmentSubject = subjectsById.get(
+                        getGroupSubjectId(enrollmentGroup),
+                      );
+
+                      return (
+                        <div
+                          key={enrollment.id}
+                          className="flex items-center justify-between rounded border border-stroke bg-white p-3 dark:border-strokedark dark:bg-boxdark"
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-black dark:text-white">
+                              {getSubjectName(enrollmentSubject)}
+                            </p>
+                            <p className="text-xs text-bodydark2">
+                              {enrollmentGroup ? getGroupLabel(enrollmentGroup) : 'Grupo no disponible'}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => handleCancelEnrollment(enrollment.id)}
+                            className="rounded bg-danger/10 px-3 py-1.5 text-xs font-medium text-danger hover:bg-danger/20"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              </div>
+            )}
+
           </div>
         )}
       </div>

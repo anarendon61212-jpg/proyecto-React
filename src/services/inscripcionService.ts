@@ -44,6 +44,10 @@ class InscripcionService {
       throw error;
     }
   }
+
+  async cancelEnrollment(enrollmentId: string) {
+    return api.put(`/academic/enrollments/${enrollmentId}`, { status: 'CANCELLED' });
+  }
 }
 
 export const inscripcionService = new InscripcionService();

@@ -11,6 +11,7 @@ export type CreateMatriculaPayload = {
 export type SearchStudentApi = {
   id: string;
   user_id?: string;
+  is_active?: boolean;
   code?: string;
   codigo?: string;
   user_code?: string;
@@ -91,6 +92,7 @@ class MatriculaService {
       return {
         ...student,
         user_id: student.user_id || matchedUser?.id,
+        is_active: student.is_active !== false && matchedUser?.is_active !== false,
         code: student.code || student.codigo || student.user_code || matchedUser?.code,
         codigo: student.codigo || student.code || student.user_code || matchedUser?.code,
         user_code: student.user_code || student.code || student.codigo || matchedUser?.code,
