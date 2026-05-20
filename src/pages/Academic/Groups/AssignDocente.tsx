@@ -1,9 +1,18 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Breadcrumb from '../../../components/Breadcrumb';
 import { docenteService } from '../../../services/docenteService';
 import { grupoService } from '../../../services/grupoService';
 import { semesterService } from '../../../services/semesterService';
+import { asignaturaService } from '../../../services/asignaturaService';
+
+type SubjectApi = {
+  id: string;
+  nombre?: string;
+  name?: string;
+  codigo?: string;
+  code?: string;
+};
 
 type GrupoApi = {
   id: string;
@@ -15,6 +24,8 @@ type GrupoApi = {
   semester_id?: string;
   asignatura_id?: string;
   subject_id?: string;
+  asignatura?: SubjectApi;
+  subject?: SubjectApi;
   docente_id?: string | null;
   teacher_id?: string | null;
 };
@@ -48,10 +59,40 @@ const getSemesterLabel = (semester: SemesterApi) => {
   return `${nombre} (${codigo})`;
 };
 
-const getGrupoLabel = (grupo: GrupoApi) => {
+const getSubjectName = (subject?: SubjectApi | null) =>
+  (subject?.nombre || subject?.name || 'Asignatura sin nombre').trim();
+
+const getSubjectCode = (subject?: SubjectApi | null) =>
+  (subject?.codigo || subject?.code || 'Sin código').trim();
+
+const getSubjectLabel = (subject?: SubjectApi | null) =>
+  `${getSubjectName(subject)} (${getSubjectCode(subject)})`;
+
+const getGroupSubject = (grupo: GrupoApi, subjectsById: Map<string, SubjectApi>) => {
+  const subjectId =
+    grupo.asignatura_id ||
+    grupo.subject_id ||
+    grupo.asignatura?.id ||
+    grupo.subject?.id ||
+    '';
+
+  return (
+    subjectsById.get(subjectId) ||
+    grupo.asignatura ||
+    grupo.subject ||
+    null
+  );
+};
+
+const getGrupoLabel = (
+  grupo: GrupoApi,
+  subjectsById: Map<string, SubjectApi>,
+) => {
   const nombre = grupo.nombre || grupo.name || 'Grupo sin nombre';
   const codigo = grupo.codigo_grupo || grupo.group_code || 'Sin código';
-  return `${nombre} (${codigo})`;
+  const subject = getGroupSubject(grupo, subjectsById);
+  const subjectLabel = subject ? ` - ${getSubjectLabel(subject)}` : '';
+  return `${nombre} (${codigo})${subjectLabel}`;
 };
 
 const getDocenteLabel = (docente: DocenteApi) => {
@@ -66,18 +107,25 @@ const AssignDocente = () => {
   const [grupos, setGrupos] = useState<GrupoApi[]>([]);
   const [docentes, setDocentes] = useState<DocenteApi[]>([]);
   const [semestres, setSemestres] = useState<SemesterApi[]>([]);
+  const [subjects, setSubjects] = useState<SubjectApi[]>([]);
   const [selectedSemester, setSelectedSemester] = useState<string>('');
   const [selectedGrupo, setSelectedGrupo] = useState<string>('');
   const [selectedDocente, setSelectedDocente] = useState<string>('');
   const [loading, setLoading] = useState(false);
 
+  const subjectsById = useMemo(
+    () => new Map(subjects.map((subject) => [subject.id, subject])),
+    [subjects],
+  );
+
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [gruposResp, docentesResp, semestresResp] = await Promise.all([
+        const [gruposResp, docentesResp, semestresResp, asignaturasResp] = await Promise.all([
           grupoService.getGrupos(),
           docenteService.getDocentes(),
           semesterService.getSemesters(),
+          asignaturaService.getAsignaturas(),
         ]);
 
         const fetchedSemestres: SemesterApi[] = Array.isArray(semestresResp)
@@ -93,6 +141,7 @@ const AssignDocente = () => {
 
         setGrupos(gruposResp.data?.data || gruposResp.data || []);
         setDocentes(docentesResp.data?.data || docentesResp.data || []);
+        setSubjects(asignaturasResp || []);
       } catch (error) {
         console.error('Error cargando datos:', error);
         toast.error('Error cargando datos');
@@ -105,10 +154,15 @@ const AssignDocente = () => {
   const filteredGroups = selectedSemester
     ? grupos.filter((grupo) => {
         const grupoSemesterId = grupo.semestre_id || grupo.semester_id || '';
-        const hasAsignatura = Boolean(grupo.asignatura_id || grupo.subject_id);
+        const hasAsignatura = Boolean(grupo.asignatura_id || grupo.subject_id || grupo.asignatura || grupo.subject);
         return grupoSemesterId === selectedSemester && hasAsignatura;
       })
     : [];
+
+  const selectedGroup = useMemo(
+    () => filteredGroups.find((grupo) => grupo.id === selectedGrupo) || null,
+    [filteredGroups, selectedGrupo],
+  );
 
   const handleAsignarDocente = async () => {
     if (!selectedSemester) {
@@ -188,10 +242,15 @@ const AssignDocente = () => {
               </option>
               {filteredGroups.map((grupo) => (
                 <option key={grupo.id} value={grupo.id}>
-                  {getGrupoLabel(grupo)}
+                  {getGrupoLabel(grupo, subjectsById)}
                 </option>
               ))}
             </select>
+            {selectedGroup ? (
+              <p className="mt-2 text-sm text-gray-600 dark:text-gray-300">
+                Asignatura asociada: {getSubjectLabel(getGroupSubject(selectedGroup, subjectsById))}
+              </p>
+            ) : null}
           </div>
 
           <div>
