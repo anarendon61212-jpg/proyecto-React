@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 
 import UserOne from '../images/user/user-01.png';
 //Importar la torre de control para obtener el usuario actual
@@ -11,13 +12,23 @@ const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const user = useSelector((state: RootState) => state.user.user);
   const navigate = useNavigate();
-  const isGuest = user?.id === "0" && user?.profile?.first_name === 'Invitado';
+  const { isAuthenticated, user: auth0User, logout } = useAuth0();
+  const isGuest = !isAuthenticated && user?.id === "0" && user?.profile?.first_name === 'Invitado';
   
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     SecurityService.logout();
+
+    if (isAuthenticated) {
+      await logout({
+        logoutParams: {
+          returnTo: window.location.origin,
+        },
+      });
+      return;
+    }
     navigate('/auth/signin');
   };
 
@@ -62,13 +73,15 @@ const DropdownUser = () => {
       >
         <span className="hidden text-right lg:block">
           <span className="block text-sm font-semibold text-gray-900 dark:text-white">
-            {user?.role === 'ADMIN' ? 'Administrador' : user?.profile?.first_name || 'Guest'}
+            {auth0User?.name || user?.profile?.first_name || (user?.role === 'ADMIN' ? 'Administrador' : 'Guest')}
           </span>
-          <span className="block text-xs text-gray-500 dark:text-gray-400">UX Designer</span>
+          <span className="block text-xs text-gray-500 dark:text-gray-400">
+            {auth0User?.email || user?.email || 'Usuario autenticado'}
+          </span>
         </span>
 
         <span className="h-10 w-10 overflow-hidden rounded-full">
-          <img src={UserOne} alt="User" />
+          <img src={auth0User?.picture || UserOne} alt="User" />
         </span>
 
         <svg

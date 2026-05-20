@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { useAuth0 } from '@auth0/auth0-react';
 import { GoogleLogin } from "@react-oauth/google";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import { User } from "../../models/User";
 import SecurityService from '../../services/securityService';
 import { googleAuthService } from '../../services/googleAuthService';
+import { auth0AuthService } from '../../services/auth0AuthService';
 import {
   signInWithMicrosoft,
   createOrUpdateFirestoreUser,
@@ -13,7 +15,8 @@ import {
 } from "../../services/firebaseAuthService";
 import RoleSelectionModal from '../../components/Auth/RoleSelectionModal';
 import Breadcrumb from "../../components/Breadcrumb";
-import { useNavigate } from "react-router-dom";
+import LoginWithGitHubButton from "../../components/Auth/LoginWithGitHubButton";
+import { useLocation, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { setUser } from "../../store/userSlice";
@@ -21,11 +24,18 @@ import { store } from "../../store/store";
 
 const SignIn: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const dispatch = useDispatch();
+  const { isAuthenticated, isLoading, user, error } = useAuth0();
   const [isRoleModalOpen, setIsRoleModalOpen] = useState(false);
   const [googleUserInfo, setGoogleUserInfo] = useState<any>(null);
+  const [auth0UserInfo, setAuth0UserInfo] = useState<any>(null);
   const [showRoleModal, setShowRoleModal] = useState(false);
+  const [showAuth0RoleModal, setShowAuth0RoleModal] = useState(false);
   const [adminExistsInSystem, setAdminExistsInSystem] = useState(false);
+  const [auth0AdminExistsInSystem, setAuth0AdminExistsInSystem] = useState(false);
+  const [auth0CheckingAccount, setAuth0CheckingAccount] = useState(false);
+  const auth0HandledEmailRef = useRef<string | null>(null);
   const [roleSelection, setRoleSelection] = useState<{
     resolve?: (role: 'STUDENT' | 'TEACHER') => void;
   }>({});
@@ -36,6 +46,136 @@ const SignIn: React.FC = () => {
     setIsRoleModalOpen(false);
     setShowRoleModal(false);
   }, []);
+
+  const hasAuthCallback = new URLSearchParams(location.search).has('code') || new URLSearchParams(location.search).has('state');
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (!isAuthenticated || !user) {
+      auth0HandledEmailRef.current = null;
+      setAuth0CheckingAccount(false);
+      setShowAuth0RoleModal(false);
+      setAuth0UserInfo(null);
+      return;
+    }
+
+    const fallbackIdentifier = (user.email || user.nickname || user.name || user.sub || 'auth0-user').trim();
+    if (auth0HandledEmailRef.current === fallbackIdentifier) {
+      return;
+    }
+
+    auth0HandledEmailRef.current = fallbackIdentifier;
+    setAuth0CheckingAccount(true);
+
+    let cancelled = false;
+
+    const syncAuth0User = async () => {
+      try {
+        const email = user.email?.trim();
+        let existingUsers: any[] = [];
+
+        if (email) {
+          const response = await fetch('http://localhost:5000/api/users/search?email=' + encodeURIComponent(email));
+          const data = await response.json();
+          existingUsers = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+        }
+
+        if (cancelled) {
+          return;
+        }
+
+        if (existingUsers.length > 0) {
+          const existingUser = existingUsers[0];
+
+          localStorage.setItem('user', JSON.stringify(existingUser));
+          dispatch(setUser(existingUser));
+          setAuth0UserInfo(null);
+          setShowAuth0RoleModal(false);
+          navigate('/dashboard', { replace: true });
+          return;
+        }
+
+        const auth0UserPayload = {
+          email: email || fallbackIdentifier,
+          given_name: user.given_name || user.nickname || user.name?.split(' ')[0] || 'Usuario',
+          family_name: user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
+          name: user.name || `${user.given_name || user.nickname || 'Usuario'} ${user.family_name || ''}`.trim(),
+          nickname: user.nickname,
+          picture: user.picture,
+          sub: user.sub,
+        };
+
+        setAuth0UserInfo(auth0UserPayload);
+
+        setAuth0CheckingAccount(false);
+        setShowAuth0RoleModal(true);
+
+        adminExists()
+          .then((adminExistsInSys) => {
+            if (!cancelled) {
+              setAuth0AdminExistsInSystem(adminExistsInSys);
+            }
+          })
+          .catch((syncError) => {
+            console.error('Error verificando si ya existe un docente:', syncError);
+          });
+      } catch (syncError) {
+        console.error('Error al sincronizar usuario de Auth0:', syncError);
+        toast.error('No se pudo verificar tu cuenta de GitHub. Intenta nuevamente.');
+        auth0HandledEmailRef.current = null;
+      } finally {
+        if (!cancelled) {
+          setAuth0CheckingAccount(false);
+        }
+      }
+    };
+
+    syncAuth0User();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, isAuthenticated, isLoading, navigate, user]);
+
+  if (hasAuthCallback && !isAuthenticated && !error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-boxdark-2">
+        <div className="w-full max-w-md rounded-2xl border border-stroke bg-white p-8 text-center shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <h2 className="text-xl font-semibold text-black dark:text-white">Procesando inicio de sesión</h2>
+          <p className="mt-2 text-sm text-bodydark2">
+            Estamos completando tu sesión de GitHub con Auth0.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-danger/30 bg-danger/10 p-5 text-danger">
+        <p className="font-semibold">No se pudo completar el login con GitHub.</p>
+        <p className="mt-1 text-sm">{error.message}</p>
+      </div>
+    );
+  }
+
+  if (auth0CheckingAccount && hasAuthCallback) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-boxdark-2">
+        <div className="w-full max-w-md rounded-2xl border border-stroke bg-white p-8 text-center shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <h2 className="text-xl font-semibold text-black dark:text-white">Verificando tu cuenta</h2>
+          <p className="mt-2 text-sm text-bodydark2">
+            Estamos comprobando si ya existe tu usuario o si debes elegir un rol.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogin = async (values: any, { setSubmitting }: any) => {
     console.log("aqui " + JSON.stringify(values))
@@ -59,11 +199,6 @@ const SignIn: React.FC = () => {
     } finally {
       setSubmitting(false);
     }
-  }
-
-  const handleGuestLogin = () => {
-    SecurityService.loginAsGuest();
-    navigate("/");
   }
 
   const handleGoogleSuccess = async (credentialResponse: any) => {
@@ -178,6 +313,31 @@ const SignIn: React.FC = () => {
     toast.error('Error al autenticar con Google');
   };
 
+  const handleAuth0RoleSelect = async (role: 'TEACHER' | 'STUDENT') => {
+    if (!auth0UserInfo) {
+      toast.error('No se pudo leer la información de tu cuenta de GitHub.');
+      return;
+    }
+
+    setShowAuth0RoleModal(false);
+
+    try {
+      toast.loading('Registrando usuario...', { id: 'auth0-register' });
+
+      const { user: registeredUser } = await auth0AuthService.registerWithAuth0(auth0UserInfo, role);
+
+      dispatch(setUser(registeredUser));
+      toast.success(`Usuario registrado como ${role === 'TEACHER' ? 'Docente' : 'Estudiante'} con código ${registeredUser.code}`, { id: 'auth0-register' });
+      navigate('/dashboard', { replace: true });
+    } catch (error: any) {
+      console.error('Error al registrar usuario con GitHub/Auth0:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al registrar usuario con GitHub';
+      toast.error(errorMessage, { id: 'auth0-register' });
+      auth0HandledEmailRef.current = null;
+      setAuth0UserInfo(null);
+    }
+  };
+
   const handleMicrosoftLogin = async () => {
     try {
       const firebaseUser = await signInWithMicrosoft();
@@ -286,6 +446,14 @@ const SignIn: React.FC = () => {
         onClose={() => setIsRoleModalOpen(false)}
         onRoleSelect={handleRoleSelect}
         userName={googleUserInfo?.name || ''}
+      />
+
+      {/* Modal para selección de rol - Auth0/GitHub */}
+      <RoleSelectionModal
+        isOpen={showAuth0RoleModal}
+        adminExists={auth0AdminExistsInSystem}
+        onRoleSelect={handleAuth0RoleSelect}
+        userName={auth0UserInfo?.name || auth0UserInfo?.email || ''}
       />
       <Breadcrumb pageName="Sign In" />
 
@@ -479,6 +647,7 @@ const SignIn: React.FC = () => {
                     >
                       Login
                     </button>
+                    <LoginWithGitHubButton />
                     <button
                       type="button"
                       onClick={handleMicrosoftLogin}
@@ -505,7 +674,6 @@ const SignIn: React.FC = () => {
                 )}
               </Formik>
 
-              {/* Google Login fuera del Formik para evitar refresh */}
               <div className="flex w-full items-center justify-center mt-4">
                 <GoogleLogin
                   onSuccess={handleGoogleSuccess}
@@ -518,14 +686,6 @@ const SignIn: React.FC = () => {
                 />
               </div>
 
-              <div className="mt-6 text-center">
-                <button
-                  onClick={handleGuestLogin}
-                  className="w-full cursor-pointer rounded-lg border border-meta-3 bg-meta-3 p-4 text-white transition hover:bg-opacity-90"
-                >
-                  Iniciar como invitado
-                </button>
-              </div>
             </div>
           </div>
         </div>

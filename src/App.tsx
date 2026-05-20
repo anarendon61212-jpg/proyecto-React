@@ -46,6 +46,7 @@ function App() {
               </Suspense>
             }>
               <Route index element={<ECommerce />} />
+              <Route path="/dashboard" element={<ECommerce />} />
               <Route
                 path="/evaluation/grades/:evaluationId"
                 element={

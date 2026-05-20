@@ -1,11 +1,29 @@
+import { useAuth0 } from '@auth0/auth0-react';
 import Breadcrumb from '../components/Breadcrumb';
 import CoverOne from '../images/cover/cover-01.png';
 import userSix from '../images/user/user-06.png';
+import AuthUserInfo from '../components/Auth/AuthUserInfo';
+import LogoutButton from '../components/Auth/LogoutButton';
 
 const Profile = () => {
+  const { isAuthenticated, isLoading } = useAuth0();
+
   return (
     <>
       <Breadcrumb pageName="Profile" />
+
+      <div className="mb-6 space-y-4">
+        {isLoading ? (
+          <p className="text-bodydark2">Cargando perfil de GitHub...</p>
+        ) : isAuthenticated ? (
+          <>
+            <AuthUserInfo />
+            <LogoutButton />
+          </>
+        ) : (
+          <p className="text-bodydark2">No hay una sesión Auth0 activa.</p>
+        )}
+      </div>
 
       <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="relative z-20 h-35 md:h-65">

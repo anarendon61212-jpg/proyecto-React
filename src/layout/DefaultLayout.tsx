@@ -2,12 +2,14 @@ import { useState } from 'react';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { Outlet } from 'react-router-dom';
+import { useAuth0 } from '@auth0/auth0-react';
 import { useSelector } from 'react-redux';
 import { RootState } from '../store/store';
 const DefaultLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const user = useSelector((state: RootState) => state.user.user);
-  const isGuest = user?.id === "0" && user?.profile?.first_name === 'Invitado';
+  const { isAuthenticated } = useAuth0();
+  const isGuest = !isAuthenticated && user?.id === "0" && user?.profile?.first_name === 'Invitado';
 
   return (
     <div className="dark:bg-boxdark-2 dark:text-bodydark">
