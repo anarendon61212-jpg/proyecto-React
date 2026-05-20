@@ -115,10 +115,13 @@ const getStudentLabel = (student: StudentApi) => {
     student.profile?.last_name,
   );
   const identification = pickText(
+    student.code,
+    student.codigo,
+    student.user_code,
     student.cedula,
     student.identification,
     student.profile?.identification,
-    'Sin cedula',
+    'Sin codigo',
   );
   const fullName = pickText(`${firstName} ${lastName}`.trim(), 'Estudiante sin nombre');
 
@@ -736,7 +739,7 @@ const EnrollmentForm = () => {
                 value={studentSearch}
                 onChange={(event) => handleStudentInput(event.target.value)}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Buscar estudiante por nombre o cedula"
+                placeholder="Buscar estudiante por nombre, código o cédula"
                 className="w-full rounded border border-stroke bg-transparent px-4 py-2.5 outline-none focus:border-primary dark:border-strokedark"
               />
 

@@ -1,4 +1,5 @@
 import { api } from "../interceptors/authInterceptor";
+import { userService } from "./userService";
 
 export type CreateMatriculaPayload = {
   student_id: string;
@@ -10,6 +11,9 @@ export type CreateMatriculaPayload = {
 export type SearchStudentApi = {
   id: string;
   user_id?: string;
+  code?: string;
+  codigo?: string;
+  user_code?: string;
   nombre?: string;
   apellido?: string;
   cedula?: string;
@@ -57,9 +61,41 @@ class MatriculaService {
   }
 
   async getStudents() {
-    const response = await api.get("/academic/students");
-    const students = response.data?.data || response.data || [];
-    return Array.isArray(students) ? students : [];
+    const [studentsResponse, users] = await Promise.all([
+      api.get("/academic/students"),
+      userService.getUsers().catch(() => []),
+    ]);
+
+    const students = studentsResponse.data?.data || studentsResponse.data || [];
+
+    if (!Array.isArray(students)) {
+      return [];
+    }
+
+    return students.map((student: SearchStudentApi) => {
+      const studentIdentification = (
+        student.cedula ||
+        student.identification ||
+        student.profile?.identification ||
+        ""
+      ).trim();
+
+      const matchedUser = users.find((user) => {
+        const userIdentification = (user.profile?.identification || "").trim();
+        return (
+          (student.user_id && user.id === student.user_id) ||
+          (!!studentIdentification && userIdentification === studentIdentification)
+        );
+      });
+
+      return {
+        ...student,
+        user_id: student.user_id || matchedUser?.id,
+        code: student.code || student.codigo || student.user_code || matchedUser?.code,
+        codigo: student.codigo || student.code || student.user_code || matchedUser?.code,
+        user_code: student.user_code || student.code || student.codigo || matchedUser?.code,
+      };
+    });
   }
 
   async getSemesters() {
@@ -82,11 +118,13 @@ class MatriculaService {
       const firstName = (student.nombre || student.first_name || student.profile?.first_name || "").toLowerCase();
       const lastName = (student.apellido || student.last_name || student.profile?.last_name || "").toLowerCase();
       const identification = (student.cedula || student.identification || student.profile?.identification || "").toLowerCase();
+      const code = (student.code || student.codigo || student.user_code || "").toLowerCase();
 
       return (
         firstName.includes(term) ||
         lastName.includes(term) ||
-        identification.includes(term)
+        identification.includes(term) ||
+        code.includes(term)
       );
     });
 

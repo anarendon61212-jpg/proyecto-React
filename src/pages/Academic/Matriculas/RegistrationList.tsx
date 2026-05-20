@@ -4,6 +4,9 @@ import { matriculaService, RegistrationApi } from '../../../services/matriculaSe
 
 type EstudianteData = {
   id: string;
+  code?: string;
+  codigo?: string;
+  user_code?: string;
   first_name?: string;
   last_name?: string;
   identification?: string;
@@ -79,12 +82,21 @@ export default function RegistrationList() {
   const getStudentName = (studentId?: string) => {
     if (!studentId) return 'Sin nombre';
     const student = students.get(studentId);
-    if (student?.first_name && student?.last_name) {
-      return `${student.first_name} ${student.last_name}`;
+    const fullName = [student?.first_name, student?.last_name].filter(Boolean).join(' ').trim();
+    const studentCode = student?.code || student?.codigo || student?.user_code || student?.identification;
+
+    if (fullName && studentCode) {
+      return `${fullName} (${studentCode})`;
     }
-    if (student?.identification) {
-      return student.identification;
+
+    if (fullName) {
+      return fullName;
     }
+
+    if (studentCode) {
+      return studentCode;
+    }
+
     return studentId.substring(0, 8) + '...';
   };
 

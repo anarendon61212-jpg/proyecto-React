@@ -1,52 +1,35 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-// import { io } from 'socket.io-client';
-
-// const SOCKET_URL = import.meta.env.VITE_SOCKET_URL;
-// const socket = io(SOCKET_URL);
-
-// Socket.io desactivado para evitar errores de conexión cuando no hay servidor backend
-const socket: any = null;
-
-interface Notification {
-  id: number;
-  message: string;
-  time: string;
-}
+import { useSelector } from 'react-redux';
+import {
+  filterNotificationsForRecipient,
+  loadNotifications,
+  subscribeToNotificationChanges,
+  type AppNotification,
+} from '../utils/notificationStore';
+import type { RootState } from '../store/store';
 
 const DropdownNotification = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const user = useSelector((state: RootState) => state.user.user);
 
   const trigger = useRef<any>(null);
   const dropdown = useRef<any>(null);
 
-  // WebSocket listener (desactivado temporalmente)
   useEffect(() => {
-    if (socket) {
-      socket.on('new_notification', (data: any) => {
-        const now = new Date();
-        console.log('Notificación recibida:', data);
+    const recipient = {
+      id: user?.id,
+      code: user?.code,
+      identification: user?.profile?.identification,
+    };
 
-        const newNotification: Notification = {
-          id: Date.now(),
-          message: data?.message || 'Nueva notificación',
-          time: now.toLocaleTimeString(), // hora
-        };
+    setNotifications(filterNotificationsForRecipient(loadNotifications(), recipient));
 
-        setNotifications((prev) => {
-          const updated = [newNotification, ...prev];
-          return updated.slice(0, 5); // máximo 5
-        });
-      });
-
-      return () => {
-        if (socket) {
-          socket.off('new_notification');
-        }
-      };
-    }
-  }, []);
+    return subscribeToNotificationChanges(() => {
+      setNotifications(filterNotificationsForRecipient(loadNotifications(), recipient));
+    });
+  }, [user]);
 
   // Click outside
   useEffect(() => {
@@ -118,8 +101,11 @@ const DropdownNotification = () => {
                 to="#"
                 className="flex flex-col gap-1 border-t px-4 py-3 hover:bg-gray-100"
               >
-                <p className="text-sm">{n.message}</p>
-                <p className="text-xs text-gray-500">{n.time}</p>
+                <p className="text-sm font-medium">{n.title}</p>
+                <p className="text-sm text-gray-600">{n.message}</p>
+                <p className="text-xs text-gray-500">
+                  {new Date(n.createdAt).toLocaleString()}
+                </p>
               </Link>
             </li>
           ))}
