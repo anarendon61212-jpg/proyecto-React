@@ -325,7 +325,13 @@ export const useStudentGrades = () => {
         const scalesById = new Map(rubricScales.map((s: ScaleApi) => [s.id, s]));
 
         criteriaDetails = rubricCriteria.map((criterion: CriterionApi) => {
-          const detail = grade.details?.find((d: any) => d.scale_id && scalesById.has(d.scale_id));
+          const criterionScaleIds = rubricScales
+            .filter((scale: ScaleApi) => scale.criterion_id === criterion.id)
+            .map((scale: ScaleApi) => scale.id);
+
+          const detail = grade.details?.find(
+            (d: any) => d.scale_id && criterionScaleIds.includes(d.scale_id),
+          );
           const scale = detail ? scalesById.get(detail.scale_id) : null;
 
           return {
