@@ -1,7 +1,6 @@
 import { lazy } from 'react';
 import { UserRole } from '../utils/roleUtils';
 
-const Calendar = lazy(() => import('../pages/Calendar'));
 const Chart = lazy(() => import('../pages/Chart'));
 const FormElements = lazy(() => import('../pages/Form/FormElements'));
 const FormLayout = lazy(() => import('../pages/Form/FormLayout'));
@@ -98,7 +97,6 @@ const coreRoutes: RouteConfig[] = [
   { path: '/ui/alerts', title: 'Alerts', component: Alerts },
   { path: '/ui/buttons', title: 'Buttons', component: Buttons },
   { path: '/image-editor', title: 'Image Editor', component: ImageEditor },
-  { path: '/calendar', title: 'Calender', component: Calendar },
   { path: '/demo', title: 'Demo', component: Demo },
 ];
 

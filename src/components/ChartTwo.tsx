@@ -73,12 +73,12 @@ const ChartTwo: React.FC = () => {
   const [state, setState] = useState<ChartTwoState>({
     series: [
       {
-        name: 'Sales',
-        data: [44, 55, 41, 67, 22, 43, 65],
+        name: 'Dudas Resueltas',
+        data: [45, 52, 48, 55, 38, 15, 12],
       },
       {
-        name: 'Revenue',
-        data: [13, 23, 20, 8, 13, 27, 15],
+        name: 'Clases Asistidas',
+        data: [35, 42, 38, 45, 28, 10, 8],
       },
     ],
   });
@@ -88,7 +88,7 @@ const ChartTwo: React.FC = () => {
       <div className="mb-4 justify-between gap-4 sm:flex">
         <div>
           <h4 className="text-xl font-semibold text-black dark:text-white">
-            Profit this week
+            Interacción Semanal
           </h4>
         </div>
         <div>
