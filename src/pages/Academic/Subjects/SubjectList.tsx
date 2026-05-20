@@ -5,6 +5,8 @@ import toast from "react-hot-toast";
 import Breadcrumb from "../../../components/Breadcrumb";
 import { Asignatura } from "../../../models/Asignatura";
 import { asignaturaService } from "../../../services/asignaturaService";
+import { grupoService } from "../../../services/grupoService";
+import { finalGradeService } from "../../../services/finalGradeService";
 
 const SubjectList: React.FC = () => {
     const navigate = useNavigate();
@@ -14,7 +16,8 @@ const SubjectList: React.FC = () => {
     
     // Filtros
     const [searchTerm, setSearchTerm] = useState<string>("");
-    const [showInactive, setShowInactive] = useState<boolean>(false);
+    const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("active");
+    const [creditsFilter, setCreditsFilter] = useState<string>("");
 
     const loadSubjects = async () => {
         setLoading(true);
@@ -36,7 +39,20 @@ const SubjectList: React.FC = () => {
     }, []);
 
     const filteredSubjects = useMemo(() => {
-        let filtered = subjects;
+        let filtered = [...subjects];
+
+        if (statusFilter !== "all") {
+            filtered = filtered.filter(subject =>
+                statusFilter === "active" ? subject.is_active : !subject.is_active
+            );
+        }
+
+        if (creditsFilter.trim()) {
+            const creditsValue = Number(creditsFilter);
+            if (!Number.isNaN(creditsValue)) {
+                filtered = filtered.filter(subject => Number(subject.credits) === creditsValue);
+            }
+        }
 
         // Filtrar por término de búsqueda
         if (searchTerm) {
@@ -47,13 +63,8 @@ const SubjectList: React.FC = () => {
             );
         }
 
-        // Filtrar por estado activo
-        if (!showInactive) {
-            filtered = filtered.filter(subject => subject.is_active);
-        }
-
         return filtered.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    }, [subjects, searchTerm, showInactive]);
+    }, [subjects, searchTerm, statusFilter, creditsFilter]);
 
     const handleCreate = () => {
         navigate("/academic/subjects/create");
@@ -61,6 +72,14 @@ const SubjectList: React.FC = () => {
 
     const handleEdit = (subject: Asignatura) => {
         navigate(`/academic/subjects/edit/${subject.id}`);
+    };
+
+    const isEnrollmentActive = (enrollment: any) => {
+        const rawStatus = enrollment?.status;
+        if (typeof rawStatus === 'boolean') return rawStatus;
+        if (rawStatus === null || rawStatus === undefined || rawStatus === '') return true;
+        const normalized = String(rawStatus).trim().toUpperCase();
+        return ['ACTIVE', 'ACTIVO', 'ENROLLED', 'MATRICULADO', 'A', '1'].includes(normalized);
     };
 
     const handleToggleActive = async (subject: Asignatura) => {
@@ -75,36 +94,58 @@ const SubjectList: React.FC = () => {
         });
 
         if (result.isConfirmed) {
+            setLoading(true);
             try {
+                // Si vamos a archivar, comprobar si existen grupos o inscripciones activas que lo impidan
+                if (subject.is_active) {
+                    const gruposResp = await grupoService.getGrupos();
+                    const gruposData = (gruposResp?.data?.data || gruposResp?.data || []) as any[];
+                    const subjectGroups = gruposData.filter(g => (g.asignatura_id || g.subject_id) === subject.id);
+
+                    if (subjectGroups.length > 0) {
+                        // Comprobar inscripciones activas en cada grupo
+                        const checks = await Promise.all(subjectGroups.map(async (g) => {
+                            try {
+                                const enrollments = await finalGradeService.getEnrollmentsByGroupId(g.id);
+                                const active = (enrollments || []).filter(isEnrollmentActive);
+                                return { group: g, activeEnrollments: active };
+                            } catch (e) {
+                                return { group: g, activeEnrollments: [] };
+                            }
+                        }));
+
+                        const blocking = checks.filter(c => (c.activeEnrollments || []).length > 0);
+                        if (blocking.length > 0) {
+                            // Mostrar detalle al usuario y abortar
+                            const details = blocking.map(b => `Grupo: ${b.group.nombre || b.group.name || b.group.codigo_grupo || b.group.group_code || b.group.id} — Inscripciones activas: ${b.activeEnrollments.length}`).join('\n');
+                            await Swal.fire({
+                                icon: 'error',
+                                title: 'No se puede archivar la asignatura',
+                                html: `<pre style="text-align:left; white-space:pre-wrap;">${details}</pre>`,
+                                confirmButtonText: 'Entendido'
+                            });
+                            setLoading(false);
+                            return;
+                        }
+                    }
+                }
+
                 await asignaturaService.updateAsignatura(subject.id, {
-                    ...subject,
                     is_active: !subject.is_active
                 });
                 toast.success(`Asignatura ${action === "archivar" ? "archivada" : "activada"} exitosamente`);
                 loadSubjects();
             } catch (error: any) {
-                toast.error(error.response?.data?.message || `Error al ${action} asignatura`);
-            }
-        }
-    };
-
-    const handleDelete = async (subject: Asignatura) => {
-        const result = await Swal.fire({
-            title: "¿Eliminar asignatura?",
-            text: `¿Estás seguro de que quieres eliminar la asignatura "${subject.name}"? Esta acción no se puede deshacer.`,
-            icon: "warning",
-            showCancelButton: true,
-            confirmButtonText: "Sí, eliminar",
-            cancelButtonText: "Cancelar",
-        });
-
-        if (result.isConfirmed) {
-            try {
-                await asignaturaService.deleteAsignatura(subject.id);
-                toast.success("Asignatura eliminada exitosamente");
-                loadSubjects();
-            } catch (error: any) {
-                toast.error(error.response?.data?.message || "Error al eliminar asignatura");
+                // Mejor manejo de errores: si el backend devuelve HTML (500), mostrar mensaje genérico y el status
+                const respData = error?.response?.data;
+                const status = error?.response?.status;
+                let message = error?.response?.data?.message || error?.message || `Error al ${action} asignatura`;
+                if (typeof respData === 'string' && respData.includes('<!DOCTYPE')) {
+                    message = `El servidor respondió con un error (${status}). Revisa los logs del backend.`;
+                }
+                toast.error(message);
+            } finally {
+                setLoading(false);
             }
         }
     };
@@ -136,17 +177,36 @@ const SubjectList: React.FC = () => {
                             />
                         </div>
 
-                        <div className="flex items-end gap-2">
-                            <label className="flex items-center gap-2 text-sm font-medium text-black dark:text-white">
-                                <input
-                                    type="checkbox"
-                                    checked={showInactive}
-                                    onChange={(e) => setShowInactive(e.target.checked)}
-                                    className="rounded border-stroke"
-                                />
-                                Mostrar inactivas
+                        <div className="min-w-[180px]">
+                            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                                Estado
                             </label>
-                            
+                            <select
+                                value={statusFilter}
+                                onChange={(e) => setStatusFilter(e.target.value as "all" | "active" | "inactive")}
+                                className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                            >
+                                <option value="all">Todas</option>
+                                <option value="active">Activas</option>
+                                <option value="inactive">Archivadas</option>
+                            </select>
+                        </div>
+
+                        <div className="min-w-[180px]">
+                            <label className="mb-2 block text-sm font-medium text-black dark:text-white">
+                                Créditos
+                            </label>
+                            <input
+                                type="number"
+                                min="1"
+                                value={creditsFilter}
+                                onChange={(e) => setCreditsFilter(e.target.value)}
+                                placeholder="Ej: 3"
+                                className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:text-white"
+                            />
+                        </div>
+
+                        <div className="flex items-end gap-2">
                             <button
                                 onClick={handleCreate}
                                 className="px-4 py-3 bg-primary text-white rounded-md hover:bg-primary/90 transition-colors"
@@ -258,15 +318,6 @@ const SubjectList: React.FC = () => {
                                                             ) : (
                                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm6-4V9a2 2 0 00-2-2H9a2 2 0 00-2 2v4" />
                                                             )}
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(subject)}
-                                                        className="text-red-500 hover:text-red-700"
-                                                        title="Eliminar"
-                                                    >
-                                                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7V4.5a2.5 2.5 0 012.5-2.5h11a2.5 2.5 0 012.5 2.5V7z" />
                                                         </svg>
                                                     </button>
                                                 </div>

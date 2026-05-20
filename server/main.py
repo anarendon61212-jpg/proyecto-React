@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from io import BytesIO
+from uuid import uuid4
 
 import jwt
 from flask import Flask, jsonify, request, send_file
+import traceback
 from flask_cors import CORS
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -45,8 +47,32 @@ USERS_DB = {
 SUBJECTS_DB = [
     {
         "id": "6cc8d499-3512-4652-8ecc-f495f8af4f10",
-        "nombre": "Programacion",
+        "name": "Programacion",
         "code": "PRG101",
+        "description": "Introduccion a la programacion y resolucion de problemas.",
+        "credits": 3,
+        "is_active": True,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+]
+
+STUDY_PLANS_DB = [
+    {
+        "id": "study-plan-1",
+        "name": "Plan 2026",
+        "year": 2026,
+        "is_active": True,
+        "is_published": True,
+    }
+]
+
+STUDY_PLAN_SUBJECTS_DB = [
+    {
+        "study_plan_id": "study-plan-1",
+        "subject_id": "6cc8d499-3512-4652-8ecc-f495f8af4f10",
+        "suggested_semester": 1,
+        "credits": 3,
     }
 ]
 
@@ -189,6 +215,71 @@ def get_subject(subject_id):
     return next((subject for subject in SUBJECTS_DB if subject["id"] == subject_id), None)
 
 
+def subject_has_active_group(subject_id):
+    # Considerar sólo grupos en semestres activos que además tengan inscripciones activas
+    active_semester_ids = {semester["id"] for semester in SEMESTERS_DB if semester.get("is_active")}
+    for group in GROUPS_DB:
+        if group.get("subject_id") != subject_id:
+            continue
+        if group.get("semester_id") not in active_semester_ids:
+            continue
+        # Comprobar si el grupo tiene inscripciones activas
+        enrollments = [en for en in ENROLLMENTS_DB if en.get("group_id") == group.get("id")]
+        active_enrollments = [en for en in enrollments if is_active_enrollment(en)]
+        if active_enrollments:
+            return True
+    return False
+
+
+def subject_has_active_study_plan(subject_id):
+    # Considerar sólo planes de estudio marcados explícitamente como activos
+    active_plan_ids = {study_plan["id"] for study_plan in STUDY_PLANS_DB if study_plan.get("is_active")}
+    return any(
+        relation.get("subject_id") == subject_id and relation.get("study_plan_id") in active_plan_ids
+        for relation in STUDY_PLAN_SUBJECTS_DB
+    )
+
+
+def validate_subject_payload(payload, *, require_all=False):
+    errors = []
+
+    name = payload.get("name")
+    code = payload.get("code")
+    description = payload.get("description")
+    credits = payload.get("credits")
+
+    normalized = {
+        "name": str(name).strip() if name is not None else None,
+        "code": str(code).strip().upper() if code is not None else None,
+        "description": str(description).strip() if description is not None else None,
+        "credits": None,
+    }
+
+    if credits is not None:
+        try:
+            normalized["credits"] = int(credits)
+        except (TypeError, ValueError):
+            errors.append("Los créditos deben ser numéricos.")
+
+    if require_all:
+        if not normalized["name"]:
+            errors.append("El nombre es requerido.")
+        if not normalized["code"]:
+            errors.append("El código es requerido.")
+        if not normalized["description"]:
+            errors.append("La descripción es requerida.")
+        if normalized["credits"] is None:
+            errors.append("Los créditos son requeridos.")
+
+    if normalized["credits"] is not None and normalized["credits"] <= 0:
+        errors.append("Los créditos deben ser un valor positivo.")
+
+    if errors:
+        return None, (jsonify({"message": errors[0]}), 400)
+
+    return normalized, None
+
+
 def get_group_evaluations(group_id):
     return [evaluation for evaluation in EVALUATIONS_DB if evaluation["group_id"] == group_id]
 
@@ -273,7 +364,10 @@ def generate_official_pdf(group_id, finalized_at):
     y -= 14
     pdf.drawString(50, y, f"Semestre: {semester.get('name', 'N/A') if semester else 'N/A'}")
     y -= 14
-    pdf.drawString(50, y, f"Asignatura: {subject.get('nombre', 'N/A') if subject else 'N/A'}")
+    subject_label = "N/A"
+    if subject:
+        subject_label = subject.get("name") or subject.get("nombre") or "N/A"
+    pdf.drawString(50, y, f"Asignatura: {subject_label}")
     y -= 14
     pdf.drawString(50, y, "Docente: Juan Docente")
     y -= 14
@@ -352,7 +446,54 @@ def get_group_by_id(group_id):
 
 @app.route("/api/academic/subjects", methods=["GET"])
 def get_subjects():
-    return jsonify({"data": SUBJECTS_DB}), 200
+    records = SUBJECTS_DB
+    is_active_filter = request.args.get("is_active")
+    credits_filter = request.args.get("credits")
+
+    if is_active_filter is not None:
+        normalized = str(is_active_filter).strip().lower()
+        if normalized in {"true", "1", "yes", "active", "activa"}:
+            records = [subject for subject in records if subject.get("is_active")]
+        elif normalized in {"false", "0", "no", "inactive", "inactiva"}:
+            records = [subject for subject in records if not subject.get("is_active")]
+
+    if credits_filter not in (None, ""):
+        try:
+            credits_value = int(credits_filter)
+        except (TypeError, ValueError):
+            return jsonify({"message": "El filtro de créditos debe ser numérico."}), 400
+        records = [subject for subject in records if int(subject.get("credits", 0)) == credits_value]
+
+    return jsonify({"data": records}), 200
+
+
+@app.route("/api/academic/subjects", methods=["POST"])
+def create_subject():
+    try:
+        payload = request.get_json(silent=True) or {}
+        normalized, error_response = validate_subject_payload(payload, require_all=True)
+        if error_response:
+            return error_response
+
+        if any(subject["code"].upper() == normalized["code"] for subject in SUBJECTS_DB):
+            return jsonify({"message": "Ya existe una asignatura con ese código."}), 409
+
+        now = datetime.now(timezone.utc).isoformat()
+        subject = {
+            "id": str(uuid4()),
+            "name": normalized["name"],
+            "code": normalized["code"],
+            "description": normalized["description"],
+            "credits": normalized["credits"],
+            "is_active": bool(payload.get("is_active", True)),
+            "created_at": now,
+            "updated_at": now,
+        }
+        SUBJECTS_DB.append(subject)
+        return jsonify({"data": subject}), 201
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"message": "Internal error creating subject", "details": str(e)}), 500
 
 
 @app.route("/api/academic/subjects/<subject_id>", methods=["GET"])
@@ -361,6 +502,68 @@ def get_subject_by_id(subject_id):
     if not subject:
         return jsonify({"message": "Subject not found"}), 404
     return jsonify({"data": subject}), 200
+
+
+@app.route("/api/academic/subjects/<subject_id>", methods=["PUT"])
+def update_subject(subject_id):
+    try:
+        subject = get_subject(subject_id)
+        if not subject:
+            return jsonify({"message": "Subject not found"}), 404
+
+        payload = request.get_json(silent=True) or {}
+        normalized, error_response = validate_subject_payload(payload, require_all=False)
+        if error_response:
+            return error_response
+
+        if payload.get("code") is not None and normalized["code"] != subject["code"].upper():
+            return jsonify({"message": "El código de la asignatura no se puede modificar."}), 400
+
+        is_active_value = payload.get("is_active")
+        if isinstance(is_active_value, bool) and not is_active_value:
+            if subject_has_active_group(subject_id):
+                return jsonify({"message": "No se puede archivar la asignatura porque tiene grupos activos."}), 409
+            if subject_has_active_study_plan(subject_id):
+                return jsonify({"message": "No se puede archivar la asignatura porque está vinculada a un plan de estudio vigente."}), 409
+        else:
+            if subject_has_active_group(subject_id):
+                return jsonify({"message": "No se puede editar la asignatura porque tiene grupos activos en el semestre vigente."}), 409
+
+        if normalized["name"] is not None:
+            if not normalized["name"]:
+                return jsonify({"message": "El nombre no puede estar vacío."}), 400
+            subject["name"] = normalized["name"]
+        if normalized["description"] is not None:
+            if not normalized["description"]:
+                return jsonify({"message": "La descripción no puede estar vacía."}), 400
+            subject["description"] = normalized["description"]
+        if normalized["credits"] is not None:
+            subject["credits"] = normalized["credits"]
+        if isinstance(is_active_value, bool):
+            subject["is_active"] = is_active_value
+
+        subject["updated_at"] = datetime.now(timezone.utc).isoformat()
+        return jsonify({"data": subject}), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"message": "Internal error updating subject", "details": str(e)}), 500
+
+
+@app.route("/api/academic/subjects/<subject_id>", methods=["DELETE"])
+def delete_subject(subject_id):
+    try:
+        subject = get_subject(subject_id)
+        if not subject:
+            return jsonify({"message": "Subject not found"}), 404
+
+        if subject_has_active_group(subject_id):
+            return jsonify({"message": "No se puede eliminar la asignatura porque tiene grupos activos."}), 409
+
+        SUBJECTS_DB.remove(subject)
+        return jsonify({"message": "Subject deleted successfully"}), 200
+    except Exception as e:
+        print(traceback.format_exc())
+        return jsonify({"message": "Internal error deleting subject", "details": str(e)}), 500
 
 
 @app.route("/api/academic/semesters", methods=["GET"])

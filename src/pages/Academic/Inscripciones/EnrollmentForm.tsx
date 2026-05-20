@@ -959,7 +959,10 @@ const EnrollmentForm = () => {
                 ) : eligibleGroups.length === 0 ? (
                   <div className="rounded border border-stroke bg-gray-1 p-4 text-sm text-bodydark2 dark:border-strokedark dark:bg-meta-4">
                     No hay grupos del semestre activo que pertenezcan al plan de
-                    estudios de la carrera seleccionada.
+                    estudios de la carrera seleccionada. Si el estudiante ya
+                    aparece inscrito en alguna asignatura, revisa la sección
+                    "Inscripciones activas del estudiante" más abajo para ver
+                    los grupos en los que ya está inscrito.
                   </div>
                 ) : (
                   <div className="space-y-3">

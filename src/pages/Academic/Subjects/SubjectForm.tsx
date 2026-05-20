@@ -14,7 +14,6 @@ const SubjectForm: React.FC = () => {
         code: "",
         description: "",
         credits: 1,
-        is_active: true,
     });
 
     const [loading, setLoading] = useState(false);
@@ -42,7 +41,6 @@ const SubjectForm: React.FC = () => {
                             code: subject.code || "",
                             description: subject.description || "",
                             credits: subject.credits || 1,
-                            is_active: subject.is_active ?? true,
                         });
                     }
                 } catch (error: any) {
@@ -152,14 +150,6 @@ const SubjectForm: React.FC = () => {
         }
     };
 
-    const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, checked } = e.target;
-        setFormData(prev => ({
-            ...prev,
-            [name]: checked
-        }));
-    };
-
     const handleCancel = () => {
         navigate("/academic/subjects");
     };
@@ -258,31 +248,6 @@ const SubjectForm: React.FC = () => {
                                 Los créditos deben estar entre 1 y 10
                             </p>
                         </div>
-
-                        {/* Estado (solo en modo edición) */}
-                        {isEditing && (
-                            <div>
-                                <label className="mb-2 block text-sm font-medium text-black dark:text-white">
-                                    Estado
-                                </label>
-                                <label className="flex items-center gap-2">
-                                    <input
-                                        type="checkbox"
-                                        name="is_active"
-                                        checked={formData.is_active}
-                                        onChange={handleCheckboxChange}
-                                        className="rounded border-stroke"
-                                        disabled={loading}
-                                    />
-                                    <span className="text-sm text-black dark:text-white">
-                                        Asignatura activa
-                                    </span>
-                                </label>
-                                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                                    Las asignaturas inactivas no pueden asociarse a nuevos grupos ni planes de estudio
-                                </p>
-                            </div>
-                        )}
 
                         {/* Botones */}
                         <div className="flex gap-4 pt-4">
