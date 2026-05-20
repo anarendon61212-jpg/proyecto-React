@@ -297,13 +297,14 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                   </NavLink>
                 </li>
 
-                <li>
-                  <NavLink
-                    to="/academic/matriculas/create"
-                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                      pathname.includes('/academic/matriculas') && 'bg-graydark dark:bg-meta-4'
-                    }`}
-                  >
+                {isAdmin && (
+                  <li>
+                    <NavLink
+                      to="/academic/matriculas/create"
+                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                        pathname.includes('/academic/matriculas') && 'bg-graydark dark:bg-meta-4'
+                      }`}
+                    >
                     <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 1.5C7.34315 1.5 6 2.84315 6 4.5C6 6.15685 7.34315 7.5 9 7.5C10.6569 7.5 12 6.15685 12 4.5C12 2.84315 10.6569 1.5 9 1.5Z" fill="" />
                       <path d="M9 9C5.68629 9 3 11.6863 3 15V16.5H10.5V15C10.5 11.6863 12.3137 9 9 9Z" fill="" />
@@ -313,14 +314,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Matricular Estudiante
                   </NavLink>
                 </li>
+                )}
 
-                <li>
-                  <NavLink
-                    to="/academic/inscripciones/create"
-                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                      pathname.includes('/academic/inscripciones') && 'bg-graydark dark:bg-meta-4'
-                    }`}
-                  >
+                {isAdmin && (
+                  <li>
+                    <NavLink
+                      to="/academic/inscripciones/create"
+                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                        pathname.includes('/academic/inscripciones') && 'bg-graydark dark:bg-meta-4'
+                      }`}
+                    >
                     <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M9 1.5C7.34315 1.5 6 2.84315 6 4.5C6 6.15685 7.34315 7.5 9 7.5C10.6569 7.5 12 6.15685 12 4.5C12 2.84315 10.6569 1.5 9 1.5Z" fill="" />
                       <path d="M3 15C3 11.6863 5.68629 9 9 9C10.986 9 12.7466 9.96428 13.8399 11.4477L12.7924 12.2205C11.9366 11.0592 10.558 10.5 9 10.5C6.51472 10.5 4.5 12.5147 4.5 15V16.5H10.5V18H3V15Z" fill="" />
@@ -330,14 +333,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Inscribir en Grupo
                   </NavLink>
                 </li>
+                )}
 
-                <li>
-                  <NavLink
-                    to="/evaluation/rubrics"
-                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                      pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
-                    }`}
-                  >
+                {(isAdmin || isTeacher) && (
+                  <li>
+                    <NavLink
+                      to="/evaluation/rubrics"
+                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                        pathname.includes('/evaluation/rubrics') && 'bg-graydark dark:bg-meta-4'
+                      }`}
+                    >
                     <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M3 4.5H15V6.75H3V4.5Z" fill="" />
                       <path d="M3 9H15V11.25H3V9Z" fill="" />
@@ -346,14 +351,16 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Rubricas
                   </NavLink>
                 </li>
+                )}
 
-                <li>
-                  <NavLink
-                    to="/evaluation/associations"
-                    className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
-                      pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
-                    }`}
-                  >
+                {(isAdmin || isTeacher) && (
+                  <li>
+                    <NavLink
+                      to="/evaluation/associations"
+                      className={`group relative flex items-center gap-2.5 rounded-sm py-2 px-4 font-medium text-bodydark1 duration-300 ease-in-out hover:bg-graydark dark:hover:bg-meta-4 ${
+                        pathname.includes('/evaluation/associations') && 'bg-graydark dark:bg-meta-4'
+                      }`}
+                    >
                     <svg className="fill-current" width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
                       <path d="M4.5 3C3.67157 3 3 3.67157 3 4.5V13.5C3 14.3284 3.67157 15 4.5 15H8.25C8.66421 15 9 14.6642 9 14.25C9 13.8358 8.66421 13.5 8.25 13.5H4.5V4.5H13.5V8.25C13.5 8.66421 13.8358 9 14.25 9C14.6642 9 15 8.66421 15 8.25V4.5C15 3.67157 14.3284 3 13.5 3H4.5Z" fill="" />
                       <path d="M10.5 11.25C10.5 10.8358 10.8358 10.5 11.25 10.5H15.75C16.1642 10.5 16.5 10.8358 16.5 11.25C16.5 11.6642 16.1642 12 15.75 12H11.25C10.8358 12 10.5 11.6642 10.5 11.25Z" fill="" />
@@ -362,6 +369,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                     Evaluaciones
                   </NavLink>
                 </li>
+                )}
 
                 <li>
                   <NavLink

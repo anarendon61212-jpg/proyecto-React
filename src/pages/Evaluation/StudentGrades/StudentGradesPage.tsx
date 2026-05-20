@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import Breadcrumb from '../../../components/Breadcrumb';
 import useStudentGrades from '../../../hooks/useStudentGrades';
 import StudentGradeDetailView from '../../../components/evaluation/StudentGradeDetailView';
+import RubricReadOnlyPanel from '../../../components/evaluation/RubricReadOnlyPanel';
 import Loader from '../../../common/Loader';
 import { generateStudentGradeReport } from '../../../utils/pdf/generateStudentGradeReport';
 
@@ -11,6 +12,7 @@ const StudentGradesPage: React.FC = () => {
     error,
     state,
     loadGradeDetail,
+    loadRubricDetail,
     selectEvaluation,
     clearSelection,
     reload,
@@ -32,6 +34,11 @@ const StudentGradesPage: React.FC = () => {
     await loadGradeDetail(evaluationId);
   };
 
+  const handleViewRubric = async (evaluationId: string) => {
+    selectEvaluation(evaluationId);
+    await loadRubricDetail(evaluationId);
+  };
+
   const handleDownloadReport = () => {
     if (state.selectedGradeDetail) {
       try {
@@ -43,7 +50,7 @@ const StudentGradesPage: React.FC = () => {
     }
   };
 
-  if (loading && !state.selectedGradeDetail) {
+  if (loading && !state.selectedGradeDetail && !state.selectedRubricDetail) {
     return <Loader />;
   }
 
@@ -177,24 +184,66 @@ const StudentGradesPage: React.FC = () => {
                           )}
                         </div>
 
-                        {evaluation.has_grade ? (
-                          <button
-                            type="button"
-                            onClick={() => handleViewDetails(evaluation.id)}
-                            className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90"
-                          >
-                            Ver detalles
-                          </button>
-                        ) : (
-                          <span className="rounded border border-stroke px-4 py-2 text-sm font-medium text-bodydark2 dark:border-strokedark">
-                            Pendiente
-                          </span>
-                        )}
+                        <div className="flex flex-wrap items-center gap-2">
+                          {evaluation.has_grade ? (
+                            <button
+                              type="button"
+                              onClick={() => handleViewDetails(evaluation.id)}
+                              className="rounded bg-primary px-4 py-2 text-sm font-medium text-white hover:bg-opacity-90"
+                            >
+                              Ver detalles
+                            </button>
+                          ) : (
+                            <span className="rounded border border-stroke px-4 py-2 text-sm font-medium text-bodydark2 dark:border-strokedark">
+                              Pendiente
+                            </span>
+                          )}
+
+                          {evaluation.rubric_id ? (
+                            <button
+                              type="button"
+                              onClick={() => handleViewRubric(evaluation.id)}
+                              className="rounded border border-primary bg-white px-4 py-2 text-sm font-medium text-primary hover:bg-primary/10 dark:border-primary dark:bg-transparent"
+                            >
+                              Ver rúbrica
+                            </button>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        ) : state.selectedRubricDetail ? (
+          <div className="space-y-6">
+            <div className="flex flex-col gap-3 rounded border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-black dark:text-white">Rúbrica de evaluación</h2>
+                <p className="text-sm text-bodydark2">Visualiza la rúbrica de la evaluación en modo solo lectura.</p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="rounded border border-stroke px-4 py-2 text-sm hover:bg-gray-1 dark:border-strokedark dark:hover:bg-meta-4"
+                >
+                  Volver a lista
+                </button>
+              </div>
+            </div>
+
+            <div className="rounded border border-stroke bg-white p-4 shadow-sm dark:border-strokedark dark:bg-boxdark">
+              <RubricReadOnlyPanel
+                evaluationName={state.selectedRubricDetail.evaluation_name}
+                subjectLabel={state.selectedRubricDetail.subject_name}
+                groupLabel={state.selectedRubricDetail.group_name}
+                rubric={state.selectedRubricDetail.rubric}
+                criteria={state.selectedRubricDetail.criteria}
+                scalesByCriterionId={state.selectedRubricDetail.scalesByCriterionId}
+                emptyMessage="Esta evaluación aún no tiene una rúbrica asociada."
+              />
             </div>
           </div>
         ) : (

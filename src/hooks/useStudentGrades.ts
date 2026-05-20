@@ -50,6 +50,16 @@ export type StudentGradeDetail = {
   }>;
 };
 
+type StudentRubricDetail = {
+  evaluation_id: string;
+  evaluation_name: string;
+  subject_name: string;
+  group_name: string;
+  rubric: RubricApi | null;
+  criteria: CriterionApi[];
+  scalesByCriterionId: Map<string, ScaleApi[]>;
+};
+
 type StudentGradesState = {
   studentId: string;
   studentName: string;
@@ -61,9 +71,11 @@ type StudentGradesState = {
     has_grade: boolean;
     final_score: number | null;
     status: string;
+    rubric_id?: string | null;
   }>;
   selectedEvaluationId: string | null;
   selectedGradeDetail: StudentGradeDetail | null;
+  selectedRubricDetail: StudentRubricDetail | null;
 };
 
 const pickText = (...values: Array<string | undefined | null>) => {
@@ -103,6 +115,7 @@ export const useStudentGrades = () => {
     evaluations: [],
     selectedEvaluationId: null,
     selectedGradeDetail: null,
+    selectedRubricDetail: null,
   });
 
   const loadData = useCallback(async () => {
@@ -155,6 +168,7 @@ export const useStudentGrades = () => {
           evaluations: [],
           selectedEvaluationId: null,
           selectedGradeDetail: null,
+          selectedRubricDetail: null,
         });
         setLoading(false);
         return;
@@ -208,6 +222,7 @@ export const useStudentGrades = () => {
           has_grade: grade !== null && grade.status === 'SENT',
           final_score: grade?.final_score || null,
           status: grade?.status || 'NOT_GRADED',
+          rubric_id: evaluation.rubric_id || null,
         };
       });
 
@@ -217,6 +232,7 @@ export const useStudentGrades = () => {
         evaluations: evaluationsList,
         selectedEvaluationId: null,
         selectedGradeDetail: null,
+        selectedRubricDetail: null,
       });
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar calificaciones';
@@ -342,6 +358,7 @@ export const useStudentGrades = () => {
         ...prev,
         selectedEvaluationId: evaluationId,
         selectedGradeDetail: gradeDetail,
+        selectedRubricDetail: null,
       }));
     } catch (err: any) {
       const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar detalle de calificación';
@@ -352,11 +369,115 @@ export const useStudentGrades = () => {
     }
   }, [user]);
 
+  const loadRubricDetail = useCallback(async (evaluationId: string) => {
+    if (!user || user.role !== 'STUDENT') {
+      setError('Acceso no autorizado');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const evaluations = await evaluationService.getEvaluations();
+      const evaluation = evaluations.find((e: EvaluationApi) => e.id === evaluationId);
+
+      if (!evaluation) {
+        setError('Evaluación no encontrada');
+        setLoading(false);
+        return;
+      }
+
+      const groupResponse = await grupoService.getGrupoById(evaluation.group_id);
+      const group = groupResponse?.data?.data || groupResponse?.data;
+      const subjectId = group?.asignatura_id || group?.subject_id;
+      const subject = subjectId ? await asignaturaService.getAsignaturaById(subjectId) : null;
+
+      const enrollments = await inscripcionService.getEnrollments();
+      const studentsResponse = await matriculaService.searchEstudiantes('');
+      const studentsList = (studentsResponse?.data || studentsResponse) as SearchStudentApi[];
+
+      const currentStudent = studentsList.find((student) => {
+        const studentIdentification = pickText(
+          student.identification,
+          student.cedula,
+          student.profile?.identification,
+        );
+        return student.user_id === user.id || studentIdentification === pickText(user.profile?.identification);
+      });
+
+      if (!currentStudent) {
+        setError('Estudiante no encontrado');
+        setLoading(false);
+        return;
+      }
+
+      const studentEnrollment = enrollments.find(
+        (e: EnrollmentApi) => e.student_id === currentStudent.id && e.group_id === evaluation.group_id
+      );
+
+      if (!studentEnrollment) {
+        setError('No estás inscrito en esta evaluación');
+        setLoading(false);
+        return;
+      }
+
+      if (!evaluation.rubric_id) {
+        setError('Esta evaluación no tiene rúbrica asociada');
+        setLoading(false);
+        return;
+      }
+
+      const rubric = (await rubricaService.getRubrics()).find((r: RubricApi) => r.id === evaluation.rubric_id) || null;
+
+      if (!rubric) {
+        setError('Rúbrica no encontrada');
+        setLoading(false);
+        return;
+      }
+
+      const criteria = await rubricaService.getCriteria();
+      const scales = await rubricaService.getScales();
+      const rubricCriteria = criteria.filter((c: CriterionApi) => c.rubric_id === rubric.id);
+      const rubricScales = scales.filter((s: ScaleApi) => rubricCriteria.some((c: CriterionApi) => c.id === s.criterion_id));
+      const scalesByCriterionId = new Map<string, ScaleApi[]>();
+      rubricScales.forEach((scale) => {
+        const existing = scalesByCriterionId.get(scale.criterion_id) || [];
+        existing.push(scale);
+        scalesByCriterionId.set(scale.criterion_id, existing);
+      });
+
+      const rubricDetail: StudentRubricDetail = {
+        evaluation_id: evaluation.id,
+        evaluation_name: evaluation.name,
+        subject_name: subject ? getSubjectName(subject as SubjectApi) : 'Asignatura no disponible',
+        group_name: group ? getGroupName(group as GroupApi) : 'Grupo no disponible',
+        rubric,
+        criteria: rubricCriteria,
+        scalesByCriterionId,
+      };
+
+      setState((prev) => ({
+        ...prev,
+        selectedEvaluationId: evaluationId,
+        selectedGradeDetail: null,
+        selectedRubricDetail: rubricDetail,
+      }));
+    } catch (err: any) {
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al cargar detalle de rúbrica';
+      setError(errorMessage);
+      console.error('Error en loadRubricDetail:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   const selectEvaluation = useCallback((evaluationId: string) => {
     setState((prev) => ({
       ...prev,
       selectedEvaluationId: evaluationId,
       selectedGradeDetail: null,
+      selectedRubricDetail: null,
     }));
   }, []);
 
@@ -365,6 +486,7 @@ export const useStudentGrades = () => {
       ...prev,
       selectedEvaluationId: null,
       selectedGradeDetail: null,
+      selectedRubricDetail: null,
     }));
   }, []);
 
@@ -377,6 +499,7 @@ export const useStudentGrades = () => {
     error,
     state,
     loadGradeDetail,
+    loadRubricDetail,
     selectEvaluation,
     clearSelection,
     reload: loadData,
