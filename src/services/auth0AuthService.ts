@@ -21,7 +21,8 @@ class Auth0AuthService {
             console.log('Auth0AuthService: Iniciando registro', { auth0UserInfo, role });
 
             const fallbackIdentifier = this.getFallbackIdentifier(auth0UserInfo);
-            const email = auth0UserInfo.email?.trim() || fallbackIdentifier;
+            const email = auth0UserInfo.email?.trim() || `${fallbackIdentifier}@github.local`; // Usar un email ficticio si no hay email real
+            const auth0Sub = auth0UserInfo.sub?.trim(); // Este es único: github|281786833
 
             const code = await generateCodeForRole(role);
             console.log('Auth0AuthService: Código generado', code);
@@ -35,7 +36,7 @@ class Auth0AuthService {
                 role: role,
                 first_name: auth0UserInfo.given_name || auth0UserInfo.name?.split(' ')[0] || 'Usuario',
                 last_name: auth0UserInfo.family_name || auth0UserInfo.name?.split(' ').slice(1).join(' ') || '',
-                identification: code,
+                identification: auth0Sub || code, // Usar el sub de Auth0 como identificación única
             };
 
             console.log('Auth0AuthService: Enviando al backend', payload);
@@ -58,7 +59,7 @@ class Auth0AuthService {
                 profile: {
                     first_name: auth0UserInfo.given_name || auth0UserInfo.name?.split(' ')[0] || 'Usuario',
                     last_name: auth0UserInfo.family_name || auth0UserInfo.name?.split(' ').slice(1).join(' ') || '',
-                    identification: code,
+                    identification: auth0Sub || code,
                 },
             };
 

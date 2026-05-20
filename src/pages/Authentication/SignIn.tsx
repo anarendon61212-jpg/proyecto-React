@@ -47,7 +47,6 @@ const SignIn: React.FC = () => {
   const [showAuth0RoleModal, setShowAuth0RoleModal] = useState(false);
   const [adminExistsInSystem, setAdminExistsInSystem] = useState(false);
   const [auth0AdminExistsInSystem, setAuth0AdminExistsInSystem] = useState(false);
-  const [auth0CheckingAccount, setAuth0CheckingAccount] = useState(false);
   const auth0HandledEmailRef = useRef<string | null>(null);
   const [roleSelection, setRoleSelection] = useState<{
     resolve?: (role: 'STUDENT' | 'TEACHER') => void;
@@ -79,96 +78,105 @@ const SignIn: React.FC = () => {
 
   const hasAuthCallback = new URLSearchParams(location.search).has('code') || new URLSearchParams(location.search).has('state');
 
-  useEffect(() => {
-    if (isLoading) {
-      return;
-    }
+  // Handler simple para Auth0 similar a Google
+  const handleAuth0Success = async (auth0User: any) => {
+    console.log('handleAuth0Success llamado');
 
-    if (!isAuthenticated || !user) {
-      auth0HandledEmailRef.current = null;
-      setAuth0CheckingAccount(false);
-      setShowAuth0RoleModal(false);
-      setAuth0UserInfo(null);
-      return;
-    }
+    try {
+      const userInfo = {
+        email: auth0User.email,
+        given_name: auth0User.given_name || auth0User.nickname || auth0User.name?.split(' ')[0] || 'Usuario',
+        family_name: auth0User.family_name || auth0User.name?.split(' ').slice(1).join(' ') || '',
+        name: auth0User.name,
+        sub: auth0User.sub,
+      };
 
-    const fallbackIdentifier = (user.email || user.nickname || user.name || user.sub || 'auth0-user').trim();
-    if (auth0HandledEmailRef.current === fallbackIdentifier) {
-      return;
-    }
+      console.log('Auth0 userInfo:', userInfo);
 
-    auth0HandledEmailRef.current = fallbackIdentifier;
-    setAuth0CheckingAccount(true);
-
-    let cancelled = false;
-
-    const syncAuth0User = async () => {
+      // Verificar si el usuario ya existe antes de mostrar el modal
       try {
-        const email = user.email?.trim();
-        let existingUsers: any[] = [];
+        // Primero buscar por email
+        let response = await fetch('http://localhost:5000/api/users/search?email=' + encodeURIComponent(userInfo.email || ''));
+        let data = await response.json();
+        console.log('Auth0: Respuesta de búsqueda por email:', data);
 
-        if (email) {
-          const response = await fetch('http://localhost:5000/api/users/search?email=' + encodeURIComponent(email));
-          const data = await response.json();
-          existingUsers = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-        }
+        let existingUsers = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
 
-        if (cancelled) {
-          return;
+        // Si no se encontró por email, buscar por identificación (sub de Auth0)
+        if (existingUsers.length === 0 && userInfo.sub) {
+          response = await fetch('http://localhost:5000/api/users/search?identification=' + encodeURIComponent(userInfo.sub));
+          data = await response.json();
+          console.log('Auth0: Respuesta de búsqueda por sub (identification):', data);
+          const usersBySub = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
+          if (usersBySub.length > 0) {
+            existingUsers = usersBySub;
+          }
         }
 
         if (existingUsers.length > 0) {
+          // El usuario ya existe, hacer login directo
           const existingUser = existingUsers[0];
+          console.log('Auth0: Usuario encontrado, haciendo login directo:', existingUser);
 
-          localStorage.setItem('user', JSON.stringify(existingUser));
-          dispatch(setUser(existingUser));
-          setAuth0UserInfo(null);
-          setShowAuth0RoleModal(false);
-          navigate('/dashboard', { replace: true });
+          toast.success(`Bienvenido de nuevo como ${existingUser.role === 'TEACHER' ? 'Docente' : 'Estudiante'}. Iniciando sesión...`);
+
+          const user = {
+            id: String(existingUser.id),
+            email: existingUser.email,
+            code: existingUser.code,
+            role: existingUser.role,
+            is_active: existingUser.is_active,
+            profile: existingUser.profile || {
+              first_name: userInfo.given_name,
+              last_name: userInfo.family_name,
+              identification: userInfo.sub || '',
+            },
+          };
+
+          localStorage.setItem('user', JSON.stringify(user));
+          dispatch(setUser(user));
+
+          setTimeout(() => {
+            navigate('/dashboard', { replace: true });
+          }, 1000);
+
           return;
         }
-
-        const auth0UserPayload = {
-          email: email || fallbackIdentifier,
-          given_name: user.given_name || user.nickname || user.name?.split(' ')[0] || 'Usuario',
-          family_name: user.family_name || user.name?.split(' ').slice(1).join(' ') || '',
-          name: user.name || `${user.given_name || user.nickname || 'Usuario'} ${user.family_name || ''}`.trim(),
-          nickname: user.nickname,
-          picture: user.picture,
-          sub: user.sub,
-        };
-
-        setAuth0UserInfo(auth0UserPayload);
-
-        setAuth0CheckingAccount(false);
-        setShowAuth0RoleModal(true);
-
-        adminExists()
-          .then((adminExistsInSys) => {
-            if (!cancelled) {
-              setAuth0AdminExistsInSystem(adminExistsInSys);
-            }
-          })
-          .catch((syncError) => {
-            console.error('Error verificando si ya existe un docente:', syncError);
-          });
-      } catch (syncError) {
-        console.error('Error al sincronizar usuario de Auth0:', syncError);
-        toast.error('No se pudo verificar tu cuenta de GitHub. Intenta nuevamente.');
-        auth0HandledEmailRef.current = null;
-      } finally {
-        if (!cancelled) {
-          setAuth0CheckingAccount(false);
-        }
+      } catch (searchError) {
+        console.log('Auth0: Error al buscar usuario, asumiendo que no existe:', searchError);
       }
-    };
 
-    syncAuth0User();
+      // Usuario no existe, mostrar modal para seleccionar rol
+      setAuth0UserInfo(userInfo);
+      setShowAuth0RoleModal(true);
 
-    return () => {
-      cancelled = true;
-    };
-  }, [dispatch, isAuthenticated, isLoading, navigate, user]);
+      adminExists()
+        .then((adminExistsInSys) => {
+          setAuth0AdminExistsInSystem(adminExistsInSys);
+        })
+        .catch((syncError) => {
+          console.error('Error verificando si ya existe un docente:', syncError);
+        });
+
+    } catch (error) {
+      console.error('Error al procesar usuario de Auth0:', error);
+      toast.error('Error al autenticar con GitHub');
+    }
+  };
+
+  // useEffect simplificado para Auth0
+  useEffect(() => {
+    if (isLoading) return;
+
+    if (isAuthenticated && user && hasAuthCallback) {
+      // Evitar procesar el mismo usuario múltiples veces
+      const fallbackIdentifier = (user.email || user.nickname || user.name || user.sub || 'auth0-user').trim();
+      if (auth0HandledEmailRef.current !== fallbackIdentifier) {
+        auth0HandledEmailRef.current = fallbackIdentifier;
+        handleAuth0Success(user);
+      }
+    }
+  }, [isAuthenticated, isLoading, user, hasAuthCallback]);
 
   if (hasAuthCallback && !isAuthenticated && !error) {
     return (
@@ -189,20 +197,6 @@ const SignIn: React.FC = () => {
       <div className="mx-auto mt-10 max-w-2xl rounded-2xl border border-danger/30 bg-danger/10 p-5 text-danger">
         <p className="font-semibold">No se pudo completar el login con GitHub.</p>
         <p className="mt-1 text-sm">{error.message}</p>
-      </div>
-    );
-  }
-
-  if (auth0CheckingAccount && hasAuthCallback) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 dark:bg-boxdark-2">
-        <div className="w-full max-w-md rounded-2xl border border-stroke bg-white p-8 text-center shadow-default dark:border-strokedark dark:bg-boxdark">
-          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent" />
-          <h2 className="text-xl font-semibold text-black dark:text-white">Verificando tu cuenta</h2>
-          <p className="mt-2 text-sm text-bodydark2">
-            Estamos comprobando si ya existe tu usuario o si debes elegir un rol.
-          </p>
-        </div>
       </div>
     );
   }
