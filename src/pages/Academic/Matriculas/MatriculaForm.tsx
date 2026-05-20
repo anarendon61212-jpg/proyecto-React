@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import Breadcrumb from '../../../components/Breadcrumb';
 import { matriculaService, RegistrationApi, SemesterApi } from '../../../services/matriculaService';
 import RegistrationList from './RegistrationList';
+import { pushNotification } from '../../../utils/notificationStore';
 
 type CarreraApi = {
   id: string;
@@ -14,8 +15,12 @@ type CarreraApi = {
 
 type EstudianteApi = {
   id: string;
+  user_id?: string;
   role?: string;
   is_active?: boolean;
+  code?: string;
+  codigo?: string;
+  user_code?: string;
   nombre?: string;
   apellido?: string;
   cedula?: string;
@@ -38,9 +43,9 @@ const getCarreraLabel = (carrera: CarreraApi) => {
 const getEstudianteLabel = (estudiante: EstudianteApi) => {
   const nombre = estudiante.nombre || estudiante.first_name || estudiante.profile?.first_name || '';
   const apellido = estudiante.apellido || estudiante.last_name || estudiante.profile?.last_name || '';
-  const cedula = estudiante.cedula || estudiante.identification || estudiante.profile?.identification || 'Sin cedula';
+  const codigo = estudiante.code || estudiante.codigo || estudiante.user_code || estudiante.cedula || estudiante.identification || estudiante.profile?.identification || 'Sin codigo';
   const fullName = `${nombre} ${apellido}`.trim() || 'Estudiante sin nombre';
-  return `${fullName} (${cedula})`;
+  return `${fullName} (${codigo})`;
 };
 
 const MatriculaForm = () => {
@@ -215,6 +220,18 @@ const MatriculaForm = () => {
 
       const successMessage = response.data?.message || 'Matricula creada correctamente';
       toast.success(successMessage);
+      const selectedEstudiante = estudiantes.find((estudiante) => estudiante.id === selectedEstudianteId);
+      const selectedCarrera = carreras.find((carrera) => carrera.id === selectedCarreraId);
+      pushNotification({
+        title: 'Matrícula registrada',
+        message: `${getEstudianteLabel(selectedEstudiante || { id: selectedEstudianteId })} fue matriculado en ${getCarreraLabel(selectedCarrera || { id: selectedCarreraId })} para el período ${normalizedPeriodoIngreso}.`,
+        recipientUserId: selectedEstudiante?.user_id,
+        recipientCode: selectedEstudiante?.code || selectedEstudiante?.codigo || selectedEstudiante?.user_code,
+        recipientIdentification:
+          selectedEstudiante?.cedula ||
+          selectedEstudiante?.identification ||
+          selectedEstudiante?.profile?.identification,
+      });
       resetForm();
     } catch (error: any) {
       console.error('Respuesta de error del backend:', error.response?.data);
@@ -272,7 +289,7 @@ const MatriculaForm = () => {
                 value={estudianteSearch}
                 onChange={(e) => handleEstudianteInput(e.target.value)}
                 onFocus={() => setShowSuggestions(true)}
-                placeholder="Buscar estudiante por nombre o cedula"
+                placeholder="Buscar estudiante por nombre, código o cédula"
                 className="w-full rounded border border-stroke bg-transparent px-4 py-2.5 outline-none focus:border-primary dark:border-strokedark"
               />
 
