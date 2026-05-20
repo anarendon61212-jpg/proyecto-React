@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import Breadcrumb from '../../../components/Breadcrumb';
 import { docenteService } from '../../../services/docenteService';
 import { grupoService } from '../../../services/grupoService';
+import { semesterService } from '../../../services/semesterService';
 
 type GrupoApi = {
   id: string;
@@ -10,6 +11,10 @@ type GrupoApi = {
   name?: string;
   codigo_grupo?: string;
   group_code?: string;
+  semestre_id?: string;
+  semester_id?: string;
+  asignatura_id?: string;
+  subject_id?: string;
   docente_id?: string | null;
   teacher_id?: string | null;
 };
@@ -22,6 +27,25 @@ type DocenteApi = {
   last_name?: string;
   cedula?: string;
   identification?: string;
+};
+
+type SemesterApi = {
+  id: string;
+  nombre?: string;
+  name?: string;
+  codigo?: string;
+  code?: string;
+  estado?: boolean;
+  is_active?: boolean;
+};
+
+const isSemesterActive = (semester: SemesterApi) =>
+  semester.is_active === true || semester.estado === true;
+
+const getSemesterLabel = (semester: SemesterApi) => {
+  const nombre = semester.nombre || semester.name || 'Semestre sin nombre';
+  const codigo = semester.codigo || semester.code || 'Sin código';
+  return `${nombre} (${codigo})`;
 };
 
 const getGrupoLabel = (grupo: GrupoApi) => {
@@ -41,6 +65,8 @@ const getDocenteLabel = (docente: DocenteApi) => {
 const AssignDocente = () => {
   const [grupos, setGrupos] = useState<GrupoApi[]>([]);
   const [docentes, setDocentes] = useState<DocenteApi[]>([]);
+  const [semestres, setSemestres] = useState<SemesterApi[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState<string>('');
   const [selectedGrupo, setSelectedGrupo] = useState<string>('');
   const [selectedDocente, setSelectedDocente] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -48,10 +74,22 @@ const AssignDocente = () => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [gruposResp, docentesResp] = await Promise.all([
+        const [gruposResp, docentesResp, semestresResp] = await Promise.all([
           grupoService.getGrupos(),
-          docenteService.getDocentes()
+          docenteService.getDocentes(),
+          semesterService.getSemesters(),
         ]);
+
+        const fetchedSemestres: SemesterApi[] = Array.isArray(semestresResp)
+          ? semestresResp
+          : semestresResp.data?.data || semestresResp.data || [];
+        const activeSemestres = fetchedSemestres.filter(isSemesterActive);
+        const semesterOptions = activeSemestres.length > 0 ? activeSemestres : fetchedSemestres;
+
+        setSemestres(semesterOptions);
+        if (semesterOptions.length === 1) {
+          setSelectedSemester(semesterOptions[0].id);
+        }
 
         setGrupos(gruposResp.data?.data || gruposResp.data || []);
         setDocentes(docentesResp.data?.data || docentesResp.data || []);
@@ -64,7 +102,20 @@ const AssignDocente = () => {
     loadData();
   }, []);
 
+  const filteredGroups = selectedSemester
+    ? grupos.filter((grupo) => {
+        const grupoSemesterId = grupo.semestre_id || grupo.semester_id || '';
+        const hasAsignatura = Boolean(grupo.asignatura_id || grupo.subject_id);
+        return grupoSemesterId === selectedSemester && hasAsignatura;
+      })
+    : [];
+
   const handleAsignarDocente = async () => {
+    if (!selectedSemester) {
+      toast.error('Selecciona el semestre activo');
+      return;
+    }
+
     if (!selectedGrupo || !selectedDocente) {
       toast.error('Selecciona grupo y docente');
       return;
@@ -103,15 +154,39 @@ const AssignDocente = () => {
         <div className="mb-6 space-y-4">
           <div>
             <label className="mb-2.5 block font-medium text-black dark:text-white">
+              Semestre
+            </label>
+            <select
+              value={selectedSemester}
+              onChange={(e) => {
+                setSelectedSemester(e.target.value);
+                setSelectedGrupo('');
+              }}
+              className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
+            >
+              <option value="">Selecciona el semestre activo...</option>
+              {semestres.map((semestre) => (
+                <option key={semestre.id} value={semestre.id}>
+                  {getSemesterLabel(semestre)}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="mb-2.5 block font-medium text-black dark:text-white">
               Grupo
             </label>
             <select
               value={selectedGrupo}
               onChange={(e) => setSelectedGrupo(e.target.value)}
+              disabled={!selectedSemester}
               className="relative z-20 w-full appearance-none rounded border border-stroke bg-white px-4 py-2 pl-4 pr-9 outline-none dark:border-strokedark dark:bg-boxdark"
             >
-              <option value="">Selecciona un grupo...</option>
-              {grupos.map((grupo) => (
+              <option value="">
+                {selectedSemester ? 'Selecciona un grupo...' : 'Selecciona primero un semestre...'}
+              </option>
+              {filteredGroups.map((grupo) => (
                 <option key={grupo.id} value={grupo.id}>
                   {getGrupoLabel(grupo)}
                 </option>
